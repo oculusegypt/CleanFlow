@@ -3,7 +3,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-# The production PHP response replaces this with the current request origin.
+# The production PHP response serves the same canonical URL below.
+Sitemap: https://alsahmm.com/sitemap.xml
 
 # AI search crawlers follow the same public-content rules as other agents.
 User-agent: GPTBot

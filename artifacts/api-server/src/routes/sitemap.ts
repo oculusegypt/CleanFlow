@@ -7,6 +7,7 @@ import { getSetting } from "./settings";
 import { requireAdmin, requireSectionPermission } from "../middleware/adminAuth";
 
 const router = Router();
+const CANONICAL_SITE_URL = "https://alsahmm.com";
 
 // Path to the frontend public folder (api-server cwd = artifacts/api-server)
 function getSitemapPath(): string {
@@ -34,16 +35,10 @@ function normalizePublicUrl(value: unknown): string {
   }
 }
 
-/** Prefer the administrator-configured public URL over an untrusted request host. */
+/** Sitemap URLs must never inherit an untrusted request or preview host. */
 async function getBaseUrl(req: Request): Promise<string> {
-  const configured = normalizePublicUrl(await getSetting("site_public_url"));
-  if (configured) return configured;
-
-  // Local development and installations without a configured domain may use
-  // the request origin, but preview/local hosts must never enter a sitemap.
-  const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() || req.protocol || "https";
-  const host  = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim()  || req.headers.host || "";
-  return normalizePublicUrl(host ? `${proto}://${host}` : "");
+  void req;
+  return CANONICAL_SITE_URL;
 }
 
 const NEIGHBORHOODS = [

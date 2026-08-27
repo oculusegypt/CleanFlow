@@ -1,7 +1,6 @@
-/**
- * The public site can be deployed to more than one domain. Never bake a
- * business domain into page metadata or internal URLs.
- */
+/** The verified production origin used by canonical and social metadata. */
+export const CANONICAL_SITE_URL = "https://alsahmm.com"
+
 function normalizeSiteOrigin(value: string | null | undefined): string {
   const candidate = String(value || "").trim()
   if (!candidate) return ""
@@ -19,12 +18,9 @@ export function getSiteUrl(configuredUrl?: string): string {
   if (configuredOrigin) return configuredOrigin
 
   const buildOrigin = normalizeSiteOrigin(import.meta.env.VITE_PUBLIC_SITE_URL)
-  if (buildOrigin) return buildOrigin
+  if (buildOrigin === CANONICAL_SITE_URL) return buildOrigin
 
-  if (typeof window !== "undefined" && window.location.origin) {
-    return normalizeSiteOrigin(window.location.origin)
-  }
-  return ""
+  return CANONICAL_SITE_URL
 }
 
 export function siteUrl(path = "/", configuredUrl?: string): string {

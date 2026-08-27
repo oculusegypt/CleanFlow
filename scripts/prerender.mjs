@@ -15,6 +15,7 @@ import { createRequire } from "node:module";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { CANONICAL_SITE_URL } from "./seo-config.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -37,12 +38,9 @@ const SEO_DEFAULTS = {
   priceRange: "$$",
   image: "/brand-icon.png",
 };
-// Prefer the administrator-configured public URL. If it is empty, all
-// generated URLs stay relative and are resolved by the browser to its
-// The public origin is deliberately not stored in source or database defaults.
-// Hostinger derives it from the request host; prerendered HTML stays relative
-// unless a build explicitly supplies SITE_URL.
-const SITE_URL = String(process.env.SITE_URL || settingMap.site_public_url || "").trim().replace(/\/+$/, "");
+// Keep prerendered canonical, Open Graph, JSON-LD, and breadcrumb URLs on the
+// verified production origin. Never derive them from a build or proxy host.
+const SITE_URL = CANONICAL_SITE_URL;
 const siteCompanyName = settingMap.company_name?.trim() || SEO_DEFAULTS.companyName;
 const siteBrandName = siteCompanyName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين";
 const siteDescription = settingMap.site_desc?.trim() || SEO_DEFAULTS.description;

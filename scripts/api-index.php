@@ -14,6 +14,10 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
+// The public origin is a deployment invariant. Request hosts may be proxy,
+// preview, or malformed values and must never become sitemap/canonical URLs.
+const CANONICAL_SITE_URL = 'https://alsahmm.com';
+
 // Hostinger accounts may still run PHP 7.4 even when the application is
 // configured for PHP 8. Keep the shared-hosting entry point compatible with
 // that runtime: these string helpers were introduced in PHP 8.0.
@@ -764,12 +768,7 @@ try {
 
     function generateSitemapXml(PDO $pdo, string $baseUrl): array {
         $today = date('Y-m-d');
-        $baseUrl = rtrim($baseUrl, '/');
-        if (empty($baseUrl)) {
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
-            $baseUrl = $host !== '' ? "{$scheme}://{$host}" : '';
-        }
+        $baseUrl = CANONICAL_SITE_URL;
 
         $neighborhoods = [
             'north-riyadh', 'al-malqa', 'al-yasmin', 'al-narjis', 'al-aarid', 'hittin', 'al-sahafa', 'al-nafal', 'al-aqiq', 'al-rabi', 'al-ghadeer', 'al-wadi', 'al-nada', 'al-falah',
@@ -2686,7 +2685,7 @@ try {
     if ($path === '/admin/sitemap/save' && $method === 'POST') {
         $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        $baseUrl = "{$proto}://{$host}";
+        $baseUrl = CANONICAL_SITE_URL;
 
         $sitemapData = generateSitemapXml($pdo, $baseUrl);
         $xml = $sitemapData['xml'];
@@ -2724,7 +2723,7 @@ try {
     if (($path === '/sitemap/generate' || $path === '/admin/sitemap/generate') && $method === 'GET') {
         $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '';
-        $baseUrl = "{$proto}://{$host}";
+        $baseUrl = CANONICAL_SITE_URL;
         $sitemapData = generateSitemapXml($pdo, $baseUrl);
         echo json_encode(array_merge($sitemapData, ['generatedAt' => date('Y-m-d')]), JSON_UNESCAPED_UNICODE);
         exit;
