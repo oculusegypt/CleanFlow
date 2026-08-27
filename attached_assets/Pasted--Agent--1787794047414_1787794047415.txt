@@ -1,0 +1,725 @@
+أنت تستلم المشروع بعد توقف Agent سابق بسبب انتهاء الحصة.
+
+**المطلوب ليس إعادة تنفيذ المهمة من البداية. المطلوب هو استكمال التنفيذ من آخر حالة وصل إليها الوكيل السابق، ثم إجراء الاختبارات النهائية وإصلاح أي أخطاء تظهر.**
+
+الملف المرفق يحتوي على سجل التنفيذ السابق، وقد تم بالفعل تنفيذ جزء كبير من المهمة.
+
+---
+
+# الحالة الحالية المؤكدة
+
+الوكيل السابق قام بالفعل بتعديل/إنشاء الملفات التالية:
+
+```text
+generate-sitemap.mjs
+validate-sitemap.mjs
+seo-quality-gate.mjs
+package.json
+prerender.mjs
+siteUrl.ts
+sitemap.ts
+build-hostinger.mjs
+seo-audit-report.md
+check-links.mjs
+```
+
+وقد قام بالفعل بتشغيل:
+
+```text
+generate-sitemap
+```
+
+ثم بدأ مرحلة:
+
+```text
+validation
+code checks
+diff inspection
+```
+
+كما قام بتعديل `validate-sitemap.mjs` مرة أخرى بعد اكتشاف نقطة تتعلق بمسار قراءة الملف.
+
+**لا تعيد إنشاء هذه الملفات ولا تعيد تنفيذ نفس التعديلات قبل فحص الحالة الحالية.**
+
+---
+
+# 1. ابدأ بفحص الحالة الحالية فقط
+
+نفذ:
+
+```text
+git status
+git diff
+git diff --stat
+```
+
+ثم افحص التغييرات الموجودة حاليًا.
+
+ممنوع:
+
+```text
+git reset --hard
+git checkout --
+git clean -fd
+```
+
+وممنوع حذف تعديلات الـ Agent السابق.
+
+---
+
+# 2. افحص الملفات التي تغيرت
+
+راجع تحديدًا:
+
+```text
+generate-sitemap.mjs
+validate-sitemap.mjs
+seo-quality-gate.mjs
+package.json
+prerender.mjs
+siteUrl.ts
+sitemap.ts
+build-hostinger.mjs
+check-links.mjs
+docs/seo-audit-report.md
+```
+
+الهدف الآن هو معرفة:
+
+**هل التعديلات الحالية صحيحة ومتكاملة؟**
+
+وليس إعادة كتابتها.
+
+---
+
+# 3. أول أولوية: Validate Sitemap
+
+شغّل:
+
+```text
+node scripts/generate-sitemap.mjs
+```
+
+ثم:
+
+```text
+node scripts/validate-sitemap.mjs
+```
+
+أو استخدم الأمر الفعلي الموجود في `package.json` إذا كان الوكيل السابق أضافه.
+
+إذا ظهر خطأ:
+
+**أصلح الخطأ فقط.**
+
+لا تعيد تصميم Validator.
+
+---
+
+# 4. تحقق من validate-sitemap.mjs
+
+الوكيل السابق وصل إلى تعديل متعلق بمسار:
+
+```text
+resolve(ROOT, filePath)
+```
+
+راجع هذا التعديل بعناية.
+
+تأكد أن Validator:
+
+* يقرأ الملف الصحيح.
+* لا يعتمد على Current Working Directory بطريقة هشة.
+* يعمل من root المشروع.
+* يعمل من Scripts.
+* لا يكسر Windows.
+* لا يكسر Linux/Hostinger.
+
+---
+
+# 5. شروط Sitemap النهائية
+
+يجب أن يفشل الفحص إذا وجد:
+
+```text
+http:
+http:/
+http://alsahmm.com
+localhost
+127.0.0.1
+replit
+preview domain
+relative URL
+wrong hostname
+duplicate URL
+empty loc
+```
+
+ويجب أن تكون Production URLs:
+
+```text
+https://alsahmm.com/...
+```
+
+---
+
+# 6. لا تكتفِ بفحص النص
+
+بعد توليد Sitemap:
+
+تحقق من:
+
+1. XML.
+2. عدد URLs.
+3. Duplicate URLs.
+4. URL scheme.
+5. Host.
+6. malformed URLs.
+7. الملفات المستهدفة.
+8. Canonical policy.
+
+إذا كانت هناك HTTP checks اختيارية، استخدمها إن كانت البيئة تسمح.
+
+لكن لا تجعل Build يعتمد على Internet بشكل يؤدي إلى فشل عشوائي بسبب الشبكة.
+
+---
+
+# 7. شغّل SEO Quality Gate
+
+بعد التأكد من Sitemap:
+
+شغّل الـ SEO quality gate الموجود حاليًا في المشروع.
+
+لا تفترض اسم الأمر.
+
+اقرأ `package.json` أولًا واعرف الـ script الصحيح.
+
+يجب التأكد من:
+
+* Title.
+* Description.
+* Canonical.
+* H1.
+* robots.
+* Sitemap.
+* noindex conflicts.
+* الروابط.
+* Structured Data حسب ما يطبقه المشروع.
+
+إذا فشل الاختبار:
+
+**حل سبب الفشل، وليس أعراضه.**
+
+---
+
+# 8. شغّل Build كامل
+
+بعد نجاح الـ validators:
+
+نفذ الـ build الحقيقي المستخدم للمشروع.
+
+راجع:
+
+```text
+package.json
+build-hostinger.mjs
+prerender.mjs
+vite.config.ts
+```
+
+وتأكد أن الترتيب النهائي منطقي.
+
+المطلوب تقريبًا:
+
+```text
+Generate sitemap
+        ↓
+Validate sitemap
+        ↓
+Prerender
+        ↓
+Build
+        ↓
+Final SEO validation
+```
+
+لكن لا تغير الترتيب إذا كانت البنية الحالية تتطلب ترتيبًا مختلفًا.
+
+---
+
+# 9. مهم جدًا: لا تعتبر Build ناجحًا دليلًا على نجاح SEO
+
+بعد الـ build افحص الناتج الفعلي.
+
+تحقق من Sitemap الناتجة.
+
+وتحقق من عينة من ملفات HTML.
+
+تأكد من:
+
+```text
+<title>
+<meta description>
+canonical
+H1
+robots
+JSON-LD
+Open Graph
+```
+
+---
+
+# 10. افحص Production
+
+إذا كان الوصول إلى الإنترنت متاحًا من بيئة التنفيذ، افحص:
+
+```text
+https://alsahmm.com/
+https://alsahmm.com/robots.txt
+https://alsahmm.com/sitemap.xml
+```
+
+والـ URLs المهمة.
+
+الأولوية:
+
+```text
+Sitemap
+Homepage
+Service
+Area
+Blog
+Article
+```
+
+تحقق من Status وHTML وCanonical.
+
+---
+
+# 11. نقطة مهمة جدًا حول Production Sitemap
+
+لا تفترض أن Production تم إصلاحها لأن الكود المحلي صحيح.
+
+التقرير السابق أشار إلى أن المشكلة الحرجة كانت في النسخة الحية.
+
+لذلك أريد نتيجة واضحة:
+
+```text
+Production Sitemap:
+PASS
+```
+
+أو:
+
+```text
+Production Sitemap:
+NOT VERIFIED
+```
+
+إذا لم تستطع الوصول إليها.
+
+**لا تكتب PASS بدون تحقق فعلي.**
+
+---
+
+# 12. راجع build-hostinger.mjs
+
+الوكيل السابق عدّل:
+
+```text
+build-hostinger.mjs
+```
+
+راجع أن التعديل لا يسبب:
+
+* Sitemap قديمة.
+* Build recursion.
+* تشغيل Generator مرتين بلا داعٍ.
+* overwrite غير مقصود.
+* deployment failure.
+* اعتماد على environment variable غير موجود.
+
+إذا وجدت مشكلة أصلحها بأقل تعديل.
+
+---
+
+# 13. راجع siteUrl.ts وseo-config.mjs
+
+تأكد أن النظام لديه مصدر واضح ومتسق للـ canonical site URL.
+
+Production يجب أن تكون:
+
+```text
+https://alsahmm.com
+```
+
+ولا يجوز أن تتحول في Production إلى:
+
+```text
+http://...
+localhost
+replit
+preview
+```
+
+لكن:
+
+**لا تجعل Development غير قابل للعمل.**
+
+يجب أن يظل التطوير المحلي ممكنًا.
+
+---
+
+# 14. راجع API Sitemap
+
+راجع `sitemap.ts`.
+
+تأكد أن API لا يعتمد بشكل غير آمن على:
+
+```text
+Host
+Origin
+X-Forwarded-Host
+```
+
+لتكوين Canonical URLs.
+
+خصوصًا خلف Proxy/Hostinger.
+
+إذا كان الحل الحالي صحيحًا، لا تعدله.
+
+---
+
+# 15. راجع PHP
+
+راجع:
+
+```text
+robots.php
+api-index.php
+```
+
+فقط للتأكد من أن تعديلات الوكيل السابق لا تتعارض مع النظام الحالي.
+
+لا تقم بإعادة كتابة PHP.
+
+---
+
+# 16. check-links.mjs
+
+الوكيل السابق قال إن التعديل على:
+
+```text
+check-links.mjs
+```
+
+كان آخر تعديل قبل بدء الاختبارات.
+
+شغّله الآن.
+
+إذا فشل بسبب قاعدة بيانات اختيارية لا تحتوي:
+
+```text
+posts
+```
+
+فلا تنشئ جدولًا وهميًا.
+
+اجعل الأداة تتعامل مع الحالة بأمان.
+
+يجب أن يكون واضحًا:
+
+```text
+Missing optional DB/table
+```
+
+وليس:
+
+```text
+Website broken
+```
+
+إذا كان الخطأ مجرد Tooling issue.
+
+---
+
+# 17. افحص Blog OG
+
+التقرير الأصلي ذكر أن Blog كان يستخدم:
+
+```text
+/images/service-facades.jpg
+```
+
+راجع ما إذا كان الوكيل السابق أصلح ذلك.
+
+إذا كان الحل لم يُنفذ، اجعل:
+
+```text
+og:image
+twitter:image
+```
+
+صحيحة ومتوافقة مع سياسة الموقع.
+
+لا تغير الصور نفسها.
+
+---
+
+# 18. لا تدخل الآن في تحسينات SEO كبيرة
+
+هذه المرحلة هي:
+
+**Completion + Validation + Regression**
+
+وليس:
+
+**إعادة تصميم SEO بالكامل.**
+
+لا تقم الآن بـ:
+
+* حذف صفحات.
+* إعادة تسمية URLs.
+* إنشاء مئات الصفحات.
+* تغيير المحتوى بالكامل.
+* تغيير التصميم.
+* تغيير Routing.
+* تغيير Database schema.
+* إعادة بناء Prerender.
+* تغيير Framework.
+
+إلا إذا اكتشفت خطأ مباشرًا يمنع المهمة من العمل.
+
+---
+
+# 19. إذا وجدت أخطاء أثناء Build
+
+تعامل معها بهذا الترتيب:
+
+### Critical
+
+يمنع Build أو يجعل Sitemap خاطئة.
+
+أصلحه.
+
+### High
+
+يكسر SEO أو Production behavior.
+
+أصلحه.
+
+### Medium
+
+يمكن إصلاحه بأمان دون تغيير معماري.
+
+أصلحه إذا كان ضمن المهمة.
+
+### Low
+
+لا تدخل فيه الآن إذا كان سيؤدي إلى Refactor أو مخاطرة.
+
+وثقه في التقرير.
+
+---
+
+# 20. أهم شيء: لا تخترع نجاحًا
+
+في النهاية أريد منك التفريق بين:
+
+```text
+Verified locally
+```
+
+و:
+
+```text
+Verified on production
+```
+
+و:
+
+```text
+Not verified
+```
+
+خصوصًا بالنسبة إلى:
+
+* Sitemap.
+* Robots.
+* Canonical.
+* Build.
+* HTTP responses.
+
+---
+
+# 21. حدّث التقرير
+
+الوكيل السابق عدّل:
+
+```text
+docs/seo-audit-report.md
+```
+
+لا تمسح عمله.
+
+راجع التعديلات وأكملها.
+
+أضف قسمًا واضحًا في النهاية:
+
+```text
+## Remediation Status
+```
+
+ويحتوي على:
+
+* المشكلة الأصلية.
+* السبب.
+* الإصلاح.
+* الملفات المتغيرة.
+* الاختبارات.
+* Production verification.
+* المشاكل المتبقية.
+
+---
+
+# 22. قبل أن تقول إن المهمة انتهت
+
+نفذ:
+
+```text
+git diff
+```
+
+مرة أخيرة.
+
+راجع كل ملف تم تعديله.
+
+ابحث عن:
+
+* Debug code.
+* console logs غير ضرورية.
+* hardcoded paths خاطئة.
+* imports غير مستخدمة.
+* variables غير مستخدمة.
+* duplicate logic.
+* build scripts متعارضة.
+* ملفات generated غير مقصودة.
+* تغييرات unrelated.
+
+لا تنظف ملفات unrelated.
+
+---
+
+# 23. Regression
+
+تأكد من أن هذه الصفحات ما زالت تعمل:
+
+```text
+/
+ /services
+ /about
+ /contact
+ /blog
+ /faq
+ /areas
+ /cleaning-packages
+```
+
+وعينة من:
+
+```text
+/service
+/area
+/blog/article
+```
+
+تأكد أن:
+
+```text
+200
+Title
+Description
+Canonical
+H1
+```
+
+ما زالت موجودة.
+
+---
+
+# 24. لا تعمل Commit جديد لمجرد إنهاء المهمة
+
+لا تنشئ Commit جديد إلا إذا كان ذلك جزءًا من workflow الحالي.
+
+الأولوية الآن هي:
+
+**التحقق من الحالة الحالية وإكمال الناقص.**
+
+---
+
+# 25. النتيجة المطلوبة منك
+
+في نهاية العمل أريد تقريرًا مختصرًا ودقيقًا:
+
+```text
+STATUS: PASS / PASS WITH WARNINGS / BLOCKED
+
+P0 Sitemap:
+PASS / FAIL
+
+Sitemap Validator:
+PASS / FAIL
+
+SEO Quality Gate:
+PASS / FAIL
+
+Build:
+PASS / FAIL
+
+Link Check:
+PASS / FAIL
+
+Production Sitemap:
+VERIFIED / NOT VERIFIED
+
+Regression:
+PASS / FAIL
+
+Files Changed:
+...
+
+Remaining Issues:
+...
+```
+
+ثم اذكر أي شيء لم تتمكن من اختباره.
+
+---
+
+## قاعدة العمل النهائية
+
+**الوكيل السابق أنجز معظم التنفيذ. مهمتك الآن هي إكماله وليس استبداله.**
+
+إذا كان الكود الحالي صحيحًا:
+
+**اتركه.**
+
+إذا كان ناقصًا:
+
+**أكمله.**
+
+إذا كان خاطئًا:
+
+**أصلحه بأقل تغيير ممكن.**
+
+إذا فشل اختبار:
+
+**حدد السبب الحقيقي ثم أصلحه.**
+
+ولا تقم بأي Refactor واسع أو تحسينات SEO تجميلية.
+
+الهدف الآن هو الوصول إلى:
+
+**Production-safe + SEO-correct + Tested + No Regression**
+
+وليس زيادة عدد التعديلات.

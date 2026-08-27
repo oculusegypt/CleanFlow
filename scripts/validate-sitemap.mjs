@@ -44,7 +44,7 @@ function resultFor(sourcePath) {
   };
 }
 
-function validateUrl(value, label, result, seen) {
+function validateUrl(value, label, result, seen, { isImage = false } = {}) {
   const raw = decodeXml(value).trim();
   if (!raw) {
     result.errors.push(`${label} is empty`);
@@ -75,12 +75,14 @@ function validateUrl(value, label, result, seen) {
   if (BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(host)) || /http:\/?\/?/i.test(raw)) {
     result.errors.push(`${label} contains a local, preview, or malformed URL: ${raw}`);
   }
-  if (/^\/(?:admin|api)(?:\/|$)/i.test(url.pathname)) {
+  if (!isImage && /^\/(?:admin|api)(?:\/|$)/i.test(url.pathname)) {
     result.errors.push(`${label} points to a non-public admin/API path: ${raw}`);
   }
 
   const normalized = url.toString().replace(/\/$/, url.pathname === "/" ? "/" : "");
-  if (seen.has(normalized)) {
+  // The primary <loc> must be unique. Image URLs are allowed to repeat because
+  // the same brand/service image can legitimately describe many pages.
+  if (!isImage && seen.has(normalized)) {
     result.errors.push(`duplicate ${label}: ${raw}`);
   }
   seen.add(normalized);
@@ -127,7 +129,7 @@ export function validateSitemapXml(xml, sourcePath = "sitemap.xml") {
   }
   const seenImages = new Set();
   for (const [index, value] of imageValues.entries()) {
-    validateUrl(value, `<image:loc> #${index + 1}`, result, seenImages);
+    validateUrl(value, `<image:loc> #${index + 1}`, result, seenImages, { isImage: true });
   }
 
   for (const block of urlBlocks) {
@@ -194,6 +196,6 @@ async function main() {
   else console.log("Sitemap validation passed.");
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
   await main();
 }
