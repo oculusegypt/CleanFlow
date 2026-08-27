@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { CANONICAL_SITE_URL } from "./seo-config.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(join(root, "lib", "db", "package.json"));
@@ -19,29 +20,9 @@ const db = new Database(dbPath, { readonly: true });
 const settingRows = db.prepare("SELECT key, value FROM site_settings").all();
 const settingMap = Object.fromEntries(settingRows.map(row => [row.key, row.value]));
 const siteName = String(settingMap.company_name || "").trim() || "خدمات التنظيف بالرياض";
-function normalizePublicUrl(value) {
-  const candidate = String(value || "").trim();
-  if (!candidate) return "";
-  try {
-    const url = new URL(candidate);
-    const host = url.hostname.toLowerCase();
-    if (!/^https?:$/.test(url.protocol) || !host) return "";
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "::1" ||
-      host.endsWith(".replit.dev") ||
-      host.endsWith(".repl.co") ||
-      host.endsWith(".replit.app")
-    ) return "";
-    return url.origin.replace(/\/+$/, "");
-  } catch {
-    return "";
-  }
-}
-// The administrator setting is the same source used by prerender and the
-// runtime sitemap route. An explicit SITE_URL is allowed for CI/builds.
-const baseUrl = normalizePublicUrl(process.env.SITE_URL) || normalizePublicUrl(settingMap.site_public_url);
+// A sitemap is a production-facing artifact. Do not let a database setting,
+// CI variable, proxy host, or preview URL change its canonical origin.
+const baseUrl = CANONICAL_SITE_URL;
 
 const xmlEscape = (value) => String(value)
   .replace(/&/g, "&amp;")

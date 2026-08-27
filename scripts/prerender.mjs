@@ -239,7 +239,7 @@ function renderPage({ title, description, keywords = "", canonical, ogImage, ogT
   // Keep canonical and social URLs absolute when the build has a configured
   // public origin; otherwise preserve relative URLs for local development.
   const canonicalUrl = canonical || `${SITE_URL}/`;
-  const imgUrl = ogImage || `${SITE_URL}/brand-icon.png`;
+  const imgUrl = absoluteImg(ogImage || `${SITE_URL}/brand-icon.png`);
   const imgAlt   = title.replace(/\|.*/,"").trim();
 
   // JSON-LD must be present in the response HTML itself, not only injected
@@ -862,7 +862,7 @@ console.log(`   ✅ ${posts.length} مقالة`);
   const blogCanonical  = `${SITE_URL}/blog`;
   const blogTitle      = `مدونة النظافة والعناية بالمنزل | ${siteCompanyName} بالرياض`;
   const blogDesc       = siteDescription || "مقالات ونصائح تساعدك على اختيار الخدمات المناسبة والعناية بالمكان.";
-  const blogOgImage    = posts[0]?.cover_image || `${SITE_URL}/images/service-apartments.jpg`;
+  const blogOgImage    = absoluteImg(posts[0]?.cover_image || `${SITE_URL}/images/service-apartments.jpg`);
 
   const blogSchema = {
     "@context": "https://schema.org",

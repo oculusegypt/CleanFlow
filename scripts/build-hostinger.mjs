@@ -41,6 +41,16 @@ if (existsSync(sabaikDistDir)) rmSync(sabaikDistDir, { recursive: true, force: t
 if (existsSync(platformDistDir)) rmSync(platformDistDir, { recursive: true, force: true });
 
 run(
+  "node scripts/generate-sitemap.mjs",
+  "إنشاء sitemap مصدر البناء من قاعدة البيانات",
+  {},
+);
+run(
+  "node scripts/validate-sitemap.mjs artifacts/sabaik-almasa/public/sitemap.xml",
+  "التحقق من sitemap المصدر قبل بناء الواجهة",
+  {},
+);
+run(
   "pnpm --filter @workspace/cleanflow-services run build",
   "vite build",
   { PORT: "19770", BASE_PATH: "/", NODE_ENV: "production" }
@@ -538,8 +548,19 @@ step("إنشاء sitemap.xml ثابت من قاعدة البيانات");
     throw new Error("تعذر إنشاء sitemap.xml بصيغة XML صحيحة");
   }
   writeFileSync(join(ROOT, "build_php/sitemap.xml"), sitemapData.xml, "utf8");
+  run(
+    "node scripts/validate-sitemap.mjs build_php/sitemap.xml",
+    "التحقق من sitemap النهائي داخل الأرشيف",
+    {},
+  );
   console.log(`  ✅ sitemap.xml ثابت — ${sitemapData.totalUrls} رابطًا`);
 }
+
+run(
+  "node scripts/seo-quality-gate.mjs",
+  "تشغيل بوابة SEO على ملفات البناء المسبق",
+  {},
+);
 
 // ── 8. كتابة بصمة البناء وتعليمات النشر ───────────────────────────────────────
 // يجب أن تُستخرج محتويات هذا الأرشيف مباشرة إلى public_html، وليس إلى مجلد

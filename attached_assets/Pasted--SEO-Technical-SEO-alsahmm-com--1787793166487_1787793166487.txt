@@ -1,0 +1,922 @@
+أنت وكيل جديد تستلم مهمة SEO/Technical SEO لموقع `alsahmm.com` بعد توقف الوكيل السابق بسبب انتهاء الحصة.
+
+**مهم جدًا: لا تبدأ من الصفر، ولا تفترض أن أي شيء لم يُنفذ.**
+
+الوكيل السابق قام بالفعل بالتحليل والتنفيذ الجزئي، وأريد منك **استكمال العمل من الحالة الحالية للمشروع** مع الحفاظ الكامل على التعديلات الصحيحة الموجودة.
+
+---
+
+# 1. الحالة التي وصلت إليها المهمة
+
+التقرير الأساسي موجود في:
+
+`docs/seo-audit-report.md`
+
+وكانت المشكلة الحرجة الأساسية:
+
+`https://alsahmm.com/sitemap.xml`
+
+كانت تُرجع XML بحالة `200` لكن قيم `<loc>` كانت مكسورة مثل:
+
+```text
+http:
+http:/about
+http:/pricing
+```
+
+بدلًا من:
+
+```text
+https://alsahmm.com/
+https://alsahmm.com/about
+https://alsahmm.com/pricing
+```
+
+كما تم اكتشاف أن هناك **أكثر من مسار لتوليد URLs/Sitemap**:
+
+* مولد Sitemap المحلي.
+* API Sitemap.
+* نسخة PHP المستخدمة على الاستضافة.
+* robots.txt / robots.php.
+* بعض منطق استخراج الـ Site URL.
+
+الوكيل السابق قرر توحيد مصدر الـ Production URL وإضافة Validation للـ Sitemap.
+
+---
+
+# 2. أهم قاعدة الآن
+
+**لا تعيد تنفيذ أي تعديل قام به الوكيل السابق قبل فحص الحالة الحالية.**
+
+ابدأ أولًا بـ:
+
+```text
+git diff
+git status
+```
+
+ثم افحص الملفات التي تم تعديلها.
+
+يُعتقد أن الوكيل السابق أنشأ/عدل على الأقل:
+
+```text
+seo-config.mjs
+prerender.mjs
+sitemap.ts
+siteUrl.ts
+robots.php
+robots.txt
+api-index.php
+```
+
+لكن **لا تعتمد على هذه القائمة وحدها**.
+
+ابحث عن كل التغييرات الحالية المتعلقة بالمهمة.
+
+---
+
+# 3. لا تعمل Reset ولا Revert
+
+ممنوع:
+
+* `git reset --hard`
+* `git checkout --`
+* حذف تعديلات الوكيل السابق.
+* إعادة الملفات إلى نسخة قديمة.
+* إعادة كتابة الملفات بالكامل.
+
+حتى لو وجدت تعديلًا لا يعجبك، افهم أولًا لماذا أُجري، ثم قرر إن كان يحتاج تعديلًا.
+
+---
+
+# 4. افهم البنية الحالية قبل أي تعديل
+
+راجع على الأقل:
+
+* `seo-config.mjs`
+* `siteUrl.ts`
+* `sitemap.ts`
+* `generate-sitemap.mjs`
+* `prerender.mjs`
+* `seo-quality-gate.mjs`
+* `check-links.mjs`
+* `robots.php`
+* `api-index.php`
+* `robots.txt`
+* `index.html`
+* `main.tsx`
+* `App.tsx`
+* `PublicRoutes.tsx`
+* `NeighborhoodPage.tsx`
+* `Blog.tsx`
+* `BlogPost.tsx`
+* `ServiceDetail.tsx`
+
+وراجع `package.json` والـ build scripts.
+
+الهدف هو معرفة:
+
+```text
+Source Data
+    ↓
+URL Generation
+    ↓
+Sitemap Generation
+    ↓
+Prerender
+    ↓
+Build
+    ↓
+Deployment
+    ↓
+Production
+```
+
+ولا تفترض أن هناك مصدرًا واحدًا للـ URL.
+
+---
+
+# 5. تحقق من تعديل الوكيل السابق
+
+الوكيل السابق أنشأ:
+
+```text
+seo-config.mjs
+```
+
+راجع الغرض منه وطريقة استخدامه.
+
+المطلوب النهائي:
+
+**مصدر واحد واضح للـ Production Canonical Base URL.**
+
+يجب أن يكون:
+
+```text
+https://alsahmm.com
+```
+
+لكن لا أريد Hardcoding عشوائي داخل عشرات الملفات.
+
+الأفضل أن يكون هناك مصدر مركزي، وتستخدمه بقية الأنظمة.
+
+---
+
+# 6. Sitemap — أكمل الإصلاح بشكل احترافي
+
+لا يكفي أن يكون الملف المحلي صحيحًا.
+
+يجب أن يكون:
+
+```text
+Local Sitemap
+=
+Build Sitemap
+=
+Deployed Sitemap
+=
+Production Sitemap
+```
+
+من حيث:
+
+* Host.
+* HTTPS.
+* URLs.
+* Canonical policy.
+* Indexability.
+
+---
+
+# 7. افحص جميع مصادر Sitemap
+
+ابحث في المشروع عن:
+
+```text
+sitemap
+generateSitemap
+<loc>
+baseUrl
+siteUrl
+PUBLIC_SITE
+SITE_URL
+HOST
+hostname
+origin
+request.url
+window.location.origin
+```
+
+واكتشف كل الأماكن التي يمكن أن تنتج Sitemap.
+
+لا تترك Generator قديمًا قادرًا على إنتاج Sitemap خاطئة.
+
+إذا كان هناك Generator غير مستخدم، لا تحذفه مباشرة.
+
+وثّق استخدامه أولًا.
+
+---
+
+# 8. API Sitemap
+
+راجع `sitemap.ts`.
+
+إذا كان الـ API يستخدم Host من Request Header مثل:
+
+```text
+Host
+X-Forwarded-Host
+Origin
+```
+
+فلا تسمح له بإنتاج Canonical URLs خاطئة في Production.
+
+خصوصًا خلف:
+
+* Proxy.
+* CDN.
+* Hostinger.
+* Preview environment.
+
+استخدم Production Canonical Base URL بطريقة آمنة.
+
+لكن لا تكسر بيئة التطوير المحلية.
+
+يجب أن يكون هناك فرق واضح بين:
+
+```text
+Development
+Preview
+Production
+```
+
+ولا يجوز أن يظهر Preview Domain داخل Production Sitemap.
+
+---
+
+# 9. PHP Sitemap / robots
+
+راجع:
+
+```text
+robots.php
+api-index.php
+```
+
+لأن الاستضافة قد تستخدم هذه الملفات فعليًا.
+
+يجب التأكد أن PHP لا تعتمد على:
+
+```text
+$_SERVER['HTTP_HOST']
+```
+
+بطريقة تؤدي إلى Sitemap/robots URLs مختلفة حسب الـ Host الوارد.
+
+لكن أيضًا لا تفترض أن PHP هي المسؤولة عن Production قبل معرفة routing الحقيقي.
+
+---
+
+# 10. Validation Script
+
+الوكيل السابق كان بصدد إنشاء Validator للـ Sitemap.
+
+إذا لم يكتمل، أكمله.
+
+يفضل:
+
+```text
+scripts/validate-sitemap.mjs
+```
+
+يجب أن يفحص:
+
+### ERROR
+
+* XML غير صالح.
+* `<loc>` غير صالح.
+* URL نسبي.
+* URL ليس HTTPS.
+* Host غير `alsahmm.com`.
+* `http:`.
+* `http:/`.
+* localhost.
+* Replit.
+* Preview domains.
+* duplicate URLs.
+* empty `<loc>`.
+* URL إلى Admin/API.
+* URL غير قابل للفهرسة.
+* Sitemap URL تشير إلى redirect أو 4xx/5xx.
+
+### WARNING
+
+* Redirect غير مثالي.
+* Canonical يحتاج مراجعة.
+* خصائص Sitemap غير المثالية.
+* مشاكل محتملة لا تستوجب إيقاف Build.
+
+### INFO
+
+* عدد URLs.
+* أنواع الصفحات.
+* آخر تعديل.
+* إحصائيات الفحص.
+
+---
+
+# 11. لا تجعل Validator هشًا
+
+هذه نقطة مهمة جدًا.
+
+لا تكتب Validator يفشل بسبب أشياء غير جوهرية.
+
+يجب أن تكون القاعدة:
+
+```text
+ERROR → Build Failure
+WARNING → Build Continues
+INFO → Reporting
+```
+
+ولا تستخدم فحوصًا عشوائية تسبب False Positives.
+
+---
+
+# 12. اربط Validator بالـ Build
+
+بعد التأكد من أن Validator يعمل:
+
+اربطه بالـ build pipeline بالطريقة الأنسب للمشروع.
+
+لكن لا تكسر الـ build الحالي.
+
+يجب أن يكون التسلسل منطقيًا:
+
+```text
+Generate
+↓
+Validate
+↓
+Prerender / Build
+↓
+Final Validation
+```
+
+أو حسب البنية الحالية.
+
+الأهم أن لا يتم نشر Sitemap غير صالحة.
+
+---
+
+# 13. تحقق من Sitemap بعد Build
+
+بعد Build:
+
+افحص الملف الناتج فعليًا.
+
+لا تعتمد على source فقط.
+
+أريد التأكد أن الناتج النهائي يحتوي على:
+
+```text
+https://alsahmm.com/
+https://alsahmm.com/about
+https://alsahmm.com/services
+...
+```
+
+ولا يحتوي على:
+
+```text
+http:
+http:/
+localhost
+replit
+preview
+```
+
+---
+
+# 14. Production Verification
+
+إذا كانت البيئة تسمح بفحص الإنترنت، افحص:
+
+```text
+https://alsahmm.com/sitemap.xml
+```
+
+مباشرة.
+
+تحقق من:
+
+* HTTP 200.
+* Content-Type.
+* XML validity.
+* `<loc>`.
+* HTTPS.
+* Host.
+* duplicate.
+* sample URLs.
+* Canonical.
+* Indexability.
+
+**لا تعتبر Local Build دليلًا على أن Production تم إصلاحه.**
+
+إذا لم تستطع الوصول إلى Production، اذكر ذلك صراحة في التقرير النهائي ولا تدّعي نجاحه.
+
+---
+
+# 15. Robots.txt
+
+راجع التعديلات التي أجراها الوكيل السابق على:
+
+```text
+robots.txt
+robots.php
+```
+
+وتأكد أن:
+
+```text
+Sitemap: https://alsahmm.com/sitemap.xml
+```
+
+صحيحة.
+
+وتأكد من عدم وجود:
+
+```text
+Disallow: /
+```
+
+أو منع غير مقصود للـ assets.
+
+لا تغير robots rules إلا إذا كان هناك سبب مثبت.
+
+---
+
+# 16. Canonical
+
+راجع `siteUrl.ts` وجميع استخداماته.
+
+أريد مصدرًا موحدًا للـ canonical URL.
+
+تأكد من أن:
+
+```text
+https://alsahmm.com/about
+```
+
+لا ينتج:
+
+```text
+http://alsahmm.com/about
+```
+
+ولا:
+
+```text
+https://www.alsahmm.com/about
+```
+
+إلا إذا كان ذلك مقصودًا وموجودًا كسياسة رسمية.
+
+الحفاظ على سياسة الـ URLs الحالية مهم.
+
+---
+
+# 17. لا تغير URL Architecture
+
+ممنوع تغيير:
+
+```text
+/services/...
+/areas/...
+/blog/...
+```
+
+أو إعادة تسمية Slugs.
+
+ممنوع حذف صفحات موجودة.
+
+ممنوع عمل redirects جماعية.
+
+إلا إذا اكتشفت مشكلة حقيقية جدًا وموثقة.
+
+وفي هذه الحالة:
+
+**توقف قبل التنفيذ وأظهر السبب.**
+
+---
+
+# 18. أكمل بقية تدقيق SEO ولكن بعد إغلاق P0
+
+بعد التأكد من Sitemap، انتقل إلى P1.
+
+راجع:
+
+### Metadata
+
+* Title.
+* Description.
+* H1.
+* Canonical.
+* OG.
+* Twitter.
+
+### Internal Linking
+
+خصوصًا صفحات الأحياء.
+
+### Local SEO
+
+تأكد من أن صفحات الأحياء ليست نسخًا متكررة.
+
+### Service Pages
+
+تأكد من وجود محتوى فعلي خاص بكل خدمة.
+
+### CTA
+
+راجع About / Blog / Areas / Services.
+
+### Structured Data
+
+راجع:
+
+* LocalBusiness.
+* WebSite.
+* FAQPage.
+* BreadcrumbList.
+* Article.
+* Service.
+* Offer.
+
+ولا تضف Schema لمجرد زيادة العدد.
+
+---
+
+# 19. Reviews / Ratings
+
+راجع أي:
+
+```text
+ratingValue
+reviewCount
+aggregateRating
+review
+```
+
+إذا كانت البيانات حقيقية ومدعومة، حافظ عليها.
+
+إذا كانت غير مؤكدة أو مولدة فقط للـ SEO:
+
+**لا تخترع أي شيء.**
+
+ولا تحذف شيئًا صحيحًا لمجرد التخوف.
+
+---
+
+# 20. صفحات الأحياء
+
+راجع:
+
+```text
+NeighborhoodPage.tsx
+```
+
+وكل البيانات التي تعتمد عليها.
+
+المطلوب:
+
+* Internal links مناسبة.
+* Services مرتبطة فعليًا.
+* CTA.
+* FAQ عندما يكون هناك محتوى حقيقي.
+* Local information حقيقية.
+
+ممنوع إنشاء نصوص وهمية عن الأحياء.
+
+وممنوع إنتاج 50 صفحة متطابقة مع تغيير اسم الحي فقط.
+
+---
+
+# 21. Blog
+
+راجع:
+
+```text
+Blog.tsx
+BlogPost.tsx
+```
+
+وتأكد من:
+
+* OG image.
+* Absolute OG URL عند الحاجة.
+* Article Schema.
+* datePublished.
+* dateModified.
+* canonical.
+* related services.
+* internal links.
+
+`dateModified` يجب ألا يتغير تلقائيًا مع كل Build بدون تعديل فعلي للمحتوى.
+
+---
+
+# 22. check-links.mjs
+
+التقرير السابق ذكر مشكلة:
+
+```text
+check-links.mjs
+```
+
+يتوقف بسبب Database ثانوية لا تحتوي:
+
+```text
+posts
+```
+
+راجع هذه المشكلة.
+
+لا تنشئ جدولًا وهميًا.
+
+ولا تغير Production Database لإرضاء الفحص.
+
+اجعل أداة الفحص تفرق بين:
+
+```text
+Tool Error
+```
+
+و:
+
+```text
+Website Error
+```
+
+إذا كانت قاعدة البيانات الثانوية اختيارية أو قديمة، تعامل معها بشكل آمن.
+
+---
+
+# 23. Performance
+
+لا تدخل في Performance Optimization كبير الآن إلا بعد إثبات الحاجة.
+
+لكن نفذ قياسًا فعليًا إذا كانت الأدوات متاحة.
+
+اختبر:
+
+* Homepage.
+* Service.
+* Area.
+* Article.
+
+وسجل:
+
+* LCP.
+* INP.
+* CLS.
+* TTFB.
+* JS.
+* Images.
+
+لا تقم بتعديل الأداء عشوائيًا.
+
+---
+
+# 24. HSTS
+
+التقرير ذكر غياب HSTS.
+
+راجع إعدادات الاستضافة أولًا.
+
+إذا كان HTTPS مستقرًا فعلًا، يمكن إضافة HSTS بطريقة آمنة.
+
+لكن لا تضف:
+
+```text
+includeSubDomains
+preload
+```
+
+بشكل أعمى.
+
+لا نريد مشكلة HTTPS على أي Subdomain.
+
+---
+
+# 25. أهم مبدأ أثناء التنفيذ
+
+**لا تحاول الوصول إلى "10/10" عن طريق كثرة التعديلات.**
+
+الهدف:
+
+```text
+Stable Production
++
+Correct Crawlability
++
+Correct Indexability
++
+Correct Sitemap
++
+Correct Canonical
++
+Useful Local Content
++
+Correct Structured Data
++
+Good Internal Linking
++
+No Regression
+```
+
+---
+
+# 26. اختبارات Regression إلزامية
+
+بعد كل مجموعة تعديلات، اختبر:
+
+* Homepage.
+* Services.
+* Service Detail.
+* Areas.
+* Area Detail.
+* Blog.
+* Blog Post.
+* FAQ.
+* About.
+* Contact.
+* Packages.
+* Privacy.
+* Terms.
+
+وتأكد أن جميع الصفحات المهمة:
+
+```text
+200
+```
+
+وأن:
+
+```text
+Title
+Description
+Canonical
+H1
+```
+
+موجودة وصحيحة.
+
+---
+
+# 27. لا تعتبر عدد الصفحات هدفًا
+
+إذا كان الـ prerender ينتج 201 أو 352 ملفًا، فهذا ليس KPI بحد ذاته.
+
+لا نريد:
+
+```text
+More Pages = Better SEO
+```
+
+نريد:
+
+```text
+More Valuable Pages = Better SEO
+```
+
+---
+
+# 28. قبل إنهاء المهمة
+
+نفذ Final Audit كامل.
+
+أريد جدولًا مثل:
+
+| المجال         | قبل    | بعد | الحالة    |
+| -------------- | ------ | --- | --------- |
+| Sitemap        | Broken | ... | PASS/FAIL |
+| Robots         | ...    | ... | PASS/FAIL |
+| Canonical      | ...    | ... | PASS/FAIL |
+| Metadata       | ...    | ... | PASS/FAIL |
+| Internal Links | ...    | ... | PASS/FAIL |
+| Schema         | ...    | ... | PASS/FAIL |
+| Local SEO      | ...    | ... | PASS/FAIL |
+| Build          | ...    | ... | PASS/FAIL |
+| Regression     | ...    | ... | PASS/FAIL |
+
+---
+
+# 29. التقرير النهائي
+
+حدّث:
+
+```text
+docs/seo-audit-report.md
+```
+
+لكن **لا تمسح التقرير القديم بدون سبب**.
+
+احتفظ بالمعلومات المهمة، وأضف قسمًا واضحًا:
+
+```text
+## Remediation / Post-Audit
+```
+
+يحتوي على:
+
+* المشاكل المكتشفة.
+* ما تم إصلاحه.
+* الملفات التي تغيرت.
+* سبب كل تعديل.
+* نتائج الاختبارات.
+* ما تم التحقق منه في Production.
+* ما لم يمكن التحقق منه.
+* المشاكل المتبقية.
+* توصيات مستقبلية.
+
+---
+
+# 30. التوثيق
+
+كل تعديل مهم يجب أن يكون مفهومًا لمطور آخر يدخل المشروع بعد شهر.
+
+لا أريد حلولًا غامضة مثل:
+
+```text
+fix seo
+fix sitemap
+```
+
+بل يجب أن يكون واضحًا:
+
+```text
+لماذا كانت المشكلة؟
+ما مصدرها؟
+ما الحل؟
+لماذا الحل آمن؟
+كيف نمنع عودتها؟
+كيف نختبرها؟
+```
+
+---
+
+# 31. الترتيب الإجباري للتنفيذ
+
+اتبع هذا الترتيب:
+
+```text
+1. Inspect current changes
+2. Understand previous implementation
+3. Verify sitemap source
+4. Complete P0
+5. Add/complete validation
+6. Connect validation to build
+7. Build
+8. Run SEO gates
+9. Verify production if possible
+10. P1 SEO fixes
+11. P2 improvements
+12. Regression tests
+13. Update docs/seo-audit-report.md
+14. Final report
+```
+
+---
+
+# 32. قاعدة أخيرة مهمة جدًا
+
+إذا وجدت أن الوكيل السابق أصلح المشكلة بالفعل:
+
+**لا تعدلها مرة أخرى.**
+
+إذا وجدت أن الحل السابق غير مكتمل:
+
+**أكمله بأقل تغيير ممكن.**
+
+إذا وجدت أن الحل السابق خاطئ:
+
+**لا تحذفه مباشرة؛ افهم أثره أولًا، ثم أصلحه بشكل آمن.**
+
+إذا وجدت مشكلة خارج نطاق SEO وقد تؤثر على النظام:
+
+**لا تدخل في Refactor شامل.**
+
+أصلح فقط ما هو ضروري للمهمة.
+
+وفي نهاية التنفيذ أعطني بوضوح:
+
+1. ماذا كان ناقصًا من الوكيل السابق؟
+2. ماذا أكملت؟
+3. ماذا تغير في الملفات؟
+4. ما الذي تم اختباره؟
+5. هل Production Sitemap أصبحت سليمة فعلًا؟
+6. هل هناك أي مشكلة متبقية؟
+7. هل هناك أي شيء **لم تستطع التحقق منه**؟
+
+**الأولوية المطلقة: سلامة Production وعدم كسر النظام الحالي، وليس كثرة التعديلات.**

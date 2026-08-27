@@ -14,27 +14,6 @@ function getSitemapPath(): string {
   return path.resolve(process.cwd(), "../sabaik-almasa/public/sitemap.xml");
 }
 
-function normalizePublicUrl(value: unknown): string {
-  const candidate = String(value || "").trim();
-  if (!candidate) return "";
-  try {
-    const url = new URL(candidate);
-    const host = url.hostname.toLowerCase();
-    if (!/^https?:$/.test(url.protocol) || !host) return "";
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "::1" ||
-      host.endsWith(".replit.dev") ||
-      host.endsWith(".repl.co") ||
-      host.endsWith(".replit.app")
-    ) return "";
-    return url.origin.replace(/\/+$/, "");
-  } catch {
-    return "";
-  }
-}
-
 /** Sitemap URLs must never inherit an untrusted request or preview host. */
 async function getBaseUrl(req: Request): Promise<string> {
   void req;

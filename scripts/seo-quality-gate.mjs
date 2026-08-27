@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateSitemapFile } from "./validate-sitemap.mjs";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const publicDir = join(ROOT, "artifacts", "sabaik-almasa", "dist", "public");
@@ -17,13 +18,13 @@ const warnings = [];
 if (!existsSync(sitemapPath)) failures.push("dist/public/sitemap.xml is missing; run the production build first");
 else {
   const sitemap = readFileSync(sitemapPath, "utf8");
+  const validation = validateSitemapFile(sitemapPath);
+  validation.errors.forEach((message) => failures.push(message));
+  validation.warnings.forEach((message) => warnings.push(message));
   const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  if (!locs.length) failures.push("sitemap has no URLs");
-  if (new Set(locs).size !== locs.length) failures.push("sitemap contains duplicate URLs");
   if (locs.some(url => /(^|\/)(container|package|packages)(?:\/|$)/i.test(url))) {
     failures.push("sitemap contains a legacy package/container URL");
   }
-  if (locs.some(url => /localhost|127\.0\.0\.1/i.test(url))) failures.push("sitemap contains a local URL");
   const imageLocs = [...sitemap.matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map(match => match[1]);
   for (const imageUrl of imageLocs) {
     if (/^https?:\/\//i.test(imageUrl)) {
@@ -83,4 +84,4 @@ if (failures.length) {
   failures.forEach(message => console.error(`FAIL: ${message}`));
   process.exit(1);
 }
-console.log("SEO gate passed: no duplicate, legacy, local, or noindex sitemap conflicts found.");
+console.log("SEO gate passed: sitemap URLs and prerendered HTML are internally consistent.");

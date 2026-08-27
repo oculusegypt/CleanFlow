@@ -15,7 +15,7 @@ function normalizeSiteOrigin(value: string | null | undefined): string {
 
 export function getSiteUrl(configuredUrl?: string): string {
   const configuredOrigin = normalizeSiteOrigin(configuredUrl)
-  if (configuredOrigin) return configuredOrigin
+  if (configuredOrigin === CANONICAL_SITE_URL) return configuredOrigin
 
   const buildOrigin = normalizeSiteOrigin(import.meta.env.VITE_PUBLIC_SITE_URL)
   if (buildOrigin === CANONICAL_SITE_URL) return buildOrigin
