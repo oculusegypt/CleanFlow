@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "7vefP_6u8DpjwiKHXVq5t"
+uri = "file://docs/seo-audit-report.md"
+type = "text"
+title = "تقرير تدقيق SEO والظهور"
+description = "تقرير موثق عن قابلية الأرشفة والعناوين والبيانات المنظمة والخريطة الحية وأولويات الإصلاح لموقع alsahmm.com."
+logical_id = "e70cc730-6981-44b8-bcb6-69db50831df9"
+content_hash = "sha256:9a23e5189ed9a25c6bf3310785728e3a329eeeafef2c746ab80240acaf1bcce8"
+size = 15585
+mtime_ms = 1787792173666
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:c1070138-93d4-4bab-bda5-e5a67654ce67/e70cc730-6981-44b8-bcb6-69db50831df9/7dcc0d8e-09bc-4548-8e67-008b704d24b6"
+storage_version_token = "1787792190661220"
+content_type = "text/markdown"

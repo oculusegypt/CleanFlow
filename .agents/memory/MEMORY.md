@@ -1,1 +1,2 @@
 - [API/frontend separation](api-dev-frontend-fallback.md) — API local development must tolerate a missing frontend build because Vite serves the React app separately.
+- [Live sitemap validation](live-sitemap-validation.md) — a passing local sitemap generator does not prove the deployed sitemap is valid; inspect live `<loc>` content after publishing.
