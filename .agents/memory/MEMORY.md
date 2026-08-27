@@ -1,0 +1,1 @@
+- [API/frontend separation](api-dev-frontend-fallback.md) — API local development must tolerate a missing frontend build because Vite serves the React app separately.

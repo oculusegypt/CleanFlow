@@ -1,45 +1,94 @@
-# [Project name]
+# منصة خدمات التنظيف بالرياض (CleanFlow Services + CleanFlow Platform)
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+موقع خدمات التنظيف الشامل والنظافة المتقدمة بالرياض مع لوحة إدارة متكاملة ومؤتمتة للطلبات والعمليات والفريق.
 
-## Run & Operate
+## التشغيل السريع (Run & Operate)
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- **الواجهة الأمامية (Frontend)** (المينا: 19770): `PORT=19770 BASE_PATH=/ pnpm --filter @workspace/cleanflow-services run dev`
+- **خادم الـ API** (المينا: 8080): `PORT=8080 pnpm --filter @workspace/api-server run dev`
+- **مخطط قاعدة البيانات**: `pnpm --filter @workspace/db run push`
+- **إعادة تعبئة البيانات**: `pnpm --filter @workspace/db run seed`
+- **فحص الأنواع (Typecheck)**: `pnpm run typecheck`
+- **البناء الموحد لهوستنجر (Build Archive)**: `node scripts/build-hostinger.mjs`
 
-## Stack
+## قاعدة البيانات (Database Architecture)
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- **النوع**: SQLite3 (مدمجة ومحليّة)
+- **محرك الاستعلام**: Drizzle ORM (`drizzle-orm/better-sqlite3`)
+- **الجداول الأساسية**:
+  - `services`: 10 خدمات تنظيف رسمية مع seo_slug عربي
+  - `containers`: 12 باقة تنظيف مستقلة بالرياض (بدون أسعار ثابتة)
+  - `service_requests`: طلبات العملاء مع تفاصيل العدادات، المكونات، والخدمات الإضافية
+  - `blog_posts`: 22 مقالة SEO مهيأة لمحركات البحث والذكاء الاصطناعي
+  - `employees` & `work_orders`: إدارة الفريق وأوامر العمل والسائقين
+  - `site_settings`: إعدادات قفل الطلبات والواتساب والشركة
 
-## Where things live
+## التكنولوجيا المستخدمة (Tech Stack)
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- **Frontend**: React 19 + Vite 7 + Tailwind CSS v4 + Wouter + Framer Motion + Lucide Icons + Leaflet
+- **Backend API**: Express 5 + Drizzle ORM + Zod
+- **Build & SSG**: Node.js SSG Pre-rendering (توليد 46 صفحة HTML ثابتة جاهزة للأرشفة الفورية)
 
-## Architecture decisions
+## الهيكلية البرمجية للمشروع (Project Structure)
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+```text
+src/
+├── components/
+│   ├── admin/requests/
+│   │   ├── RequestsStatsGrid.tsx
+│   │   ├── RequestsTable.tsx
+│   │   └── RequestDetailModal.tsx
+│   ├── home/
+│   │   ├── packages/
+│   │   │   ├── CategoryTabs.tsx
+│   │   │   └── PackageCard.tsx
+│   │   ├── services/
+│   │   │   └── ServiceCard.tsx
+│   │   └── request-modal/
+│   │       ├── types.ts
+│   │       ├── constants.ts
+│   │       └── StepServiceSelect.tsx
+│   └── common/
+│       └── ScrollToTop.tsx
+└── routes/
+    ├── AdminRoutes.tsx
+    └── PublicRoutes.tsx
+```
 
-## Product
+## لوحة الإدارة (Admin Panel)
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **الرابط**: `/admin/login`
+- **منصة التشغيل التسويقية**: `/cleanflow-platform/` — CleanFlow Platform
+- **الأدوار**: `admin`, `manager`, `customer_service`, `requests_officer`, `driver`
+- **الخدمات المتاحة**: متابعة الطلبات، تعيين أوامر العمل، إدارة المقالات والخدمات والباقات، الإشعارات، والتحليلات.
+- **توثيق الحركات التشغيلية**: قواعد الإدخال، الحالات المسموحة، والتصحيح في `docs/container-system-movements.md`.
+- **توثيق الأمان والتشغيل**: الصلاحيات، دورة العقد، وبيانات التتبع العامة في `docs/container-system-security-and-operations.md`.
 
-## User preferences
+## النشر على Hostinger
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+### قيد التشغيل المؤكد
 
-## Gotchas
+بيئة Hostinger المستهدفة **لا تدعم تشغيل Node.js أو npm أو PM2 في الإنتاج**. لذلك:
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Node.js وVite وDrizzle تُستخدم محلياً فقط لبناء وتجهيز الأرشيف.
+- الخادم المرفوع إلى Hostinger يعمل حصراً عبر **PHP 8.x + PDO SQLite**.
+- جميع مسارات API، تسجيل الدخول، المدونة، نظام الباقات التنظيف، إدارة الطلبات، وقراءة/تعديل قاعدة البيانات يجب أن تكون موجودة في `api/index.php` وملفات PHP المساندة.
+- لا يجوز أن يعتمد الموقع المرفوع على Express أو خادم Node أو اتصال بخدمة Replit.
+- الأرشيف الكامل يجب أن يحتوي على `index.html` و`api/` و`data/` و`uploads/` في جذر الأرشيف، ليتم استخراجها مباشرة داخل `public_html`.
 
-## Pointers
+يتم بناء أرشيف رفع جاهز يحتوي على PHP + SQLite مدمجة من خلال الأمر:
+```bash
+node scripts/build-hostinger.mjs
+```
+ينتج الملف **`cleanflow-services-hostinger.zip`**. هذا الأمر يعمل في بيئة البناء فقط؛ لا يتم تشغيله على Hostinger.
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+بعد استخراج الأرشيف في `public_html/` يجب أن تكون البنية الأساسية:
+```text
+public_html/
+├── index.html
+├── api/index.php
+├── api/container-system.php
+├── data/sabaik.db
+├── uploads/
+└── cleanflow-platform/
+```

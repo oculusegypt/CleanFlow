@@ -1,14 +1,16 @@
 import { defineConfig } from "drizzle-kit";
 import path from "path";
+import fs from "fs";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
+// __dirname here is lib/db — go up two levels to reach workspace root
+const dbDir = path.join(__dirname, "../../data");
+fs.mkdirSync(dbDir, { recursive: true });
+const dbPath = process.env["DB_PATH"] ?? path.join(dbDir, "sabaik.db");
 
 export default defineConfig({
   schema: path.join(__dirname, "./src/schema/index.ts"),
-  dialect: "postgresql",
+  dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: dbPath,
   },
 });

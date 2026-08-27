@@ -33,6 +33,7 @@ minimumReleaseAgeExclude:
   # this setting guards against does not apply to our own packages.
   - '@replit/*'
   - stripe-replit-sync
+  - tsx
 
 packages:
   - artifacts/*
@@ -70,6 +71,7 @@ autoInstallPeers: false
 
 onlyBuiltDependencies:
   - '@swc/core'
+  - better-sqlite3
   - esbuild
   - msw
   - unrs-resolver

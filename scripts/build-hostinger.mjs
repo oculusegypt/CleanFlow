@@ -1,0 +1,633 @@
+#!/usr/bin/env node
+/**
+ * build-hostinger.mjs
+ * ───────────────────
+ * خطوات بناء كاملة لـ Hostinger:
+ *  1. بناء الواجهة الأمامية (Vite)
+ *  2. نسخ ملفات البناء → build_php/
+ *  3. إنشاء snapshot متسق لقاعدة البيانات
+ *  4. نسخ قاعدة البيانات + تحويل عمود `order` → `sort_order` في الجداول المتأثرة
+ *     (Drizzle ينشئ `order`، لكن PHP يقرأ `sort_order`)
+ *  5. ضبط journal_mode=DELETE (WAL غير مدعوم على Hostinger shared hosting)
+ *  6. تجهيز مجلد uploads بدون إعادة إدراج صور المشروع القديم
+ *  7. تجهيز تعليمات النشر وضغط الأرشيف النهائي بمحتوى الموقع في جذر الأرشيف
+ */
+
+import { execSync } from "child_process";
+import { randomBytes, createHash } from "crypto";
+import { createRequire } from "module";
+import { existsSync, mkdirSync, copyFileSync, rmSync, cpSync, writeFileSync, readFileSync, readdirSync, statSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(__dirname, "..");
+const require = createRequire(join(ROOT, "lib", "db", "package.json"));
+const Database = require("better-sqlite3");
+function run(cmd, label, envVars = {}) {
+  console.log(`\n▶ ${label}`);
+  execSync(cmd, { cwd: ROOT, stdio: "inherit", env: { ...process.env, ...envVars } });
+}
+
+function step(label) {
+  console.log(`\n${"─".repeat(60)}\n✦ ${label}`);
+}
+
+// ── 1. بناء الواجهة الأمامية ─────────────────────────────────────────────────
+step("بناء الواجهة الأمامية (Vite)");
+const sabaikDistDir = join(ROOT, "artifacts/sabaik-almasa/dist");
+const platformDistDir = join(ROOT, "artifacts/sabaik-platform/dist");
+if (existsSync(sabaikDistDir)) rmSync(sabaikDistDir, { recursive: true, force: true });
+if (existsSync(platformDistDir)) rmSync(platformDistDir, { recursive: true, force: true });
+
+run(
+  "pnpm --filter @workspace/cleanflow-services run build",
+  "vite build",
+  { PORT: "19770", BASE_PATH: "/", NODE_ENV: "production" }
+);
+run(
+  "pnpm --filter @workspace/cleanflow-platform run build",
+  "بناء صفحة CleanFlow Platform",
+  { PORT: "19040", BASE_PATH: "/cleanflow-platform/", NODE_ENV: "production" }
+);
+
+// ── 1b. Pre-rendering — HTML ثابت لكل مقال وخدمة وباقة التنظيف ─────────────────────
+step("Pre-rendering الصفحات (SSG)");
+run(
+  "node scripts/prerender.mjs",
+  "توليد HTML ثابت لجميع مقالات المدونة والخدمات والباقات التنظيف",
+  {}
+);
+
+// ── 2. نسخ ملفات البناء ───────────────────────────────────────────────────────
+step("نسخ ملفات الواجهة → build_php/");
+
+// نسخ assets/
+rmSync(join(ROOT, "build_php/assets"), { recursive: true, force: true });
+rmSync(join(ROOT, "build_php/images"), { recursive: true, force: true });
+rmSync(join(ROOT, "build_php/container"), { recursive: true, force: true });
+rmSync(join(ROOT, "build_php/api/uploads"), { recursive: true, force: true });
+rmSync(join(ROOT, "build_php/sabaik-platform"), { recursive: true, force: true });
+
+for (const legacyImage of [
+  "Banner-Big.webp", "Banner-Small.webp", "No1-Banner.webp", "good.webp",
+  "shareek-mawsouq.webp", "container1.jpg", "container2.jpg", "container3.jpg", "container4.jpg",
+  "hero1.jpg", "hero2.jpg", "hero3.jpg", "hero4.jpg", "ceo.webp", "hawiyat-logo.webp",
+  "partner1.jpg", "partner2.jpg", "partner3.jpg", "partner4.jpg", "partner5.jpg", "partner6.jpg",
+  "logo.png", "favicon.png", "notification-icon.png"
+]) {
+  rmSync(join(ROOT, "build_php", legacyImage), { force: true });
+}
+const SKIP_FILES = new Set(["sitemap.xml", "api"]);
+const distPublic = join(ROOT, "artifacts/sabaik-almasa/dist/public");
+
+function copyDirRecursive(srcDir, dstDir) {
+  mkdirSync(dstDir, { recursive: true });
+  for (const item of readdirSync(srcDir)) {
+    if (SKIP_FILES.has(item)) continue;
+    const srcPath = join(srcDir, item);
+    const dstPath = join(dstDir, item);
+    try {
+      const stat = statSync(srcPath);
+      if (stat.isDirectory()) {
+        copyDirRecursive(srcPath, dstPath);
+      } else {
+        copyFileSync(srcPath, dstPath);
+      }
+    } catch {}
+  }
+}
+
+copyDirRecursive(distPublic, join(ROOT, "build_php"));
+console.log("  ✅ تم نسخ جميع المجلدات والصفحات الثابتة إلى build_php/");
+
+// بعض السجلات القديمة في SQLite تشير إلى /images/<file> بينما الملف المصدر
+// موجود في public/uploads/<file>. أنشئ نسخة توافقية في images/ حتى تعمل
+// المدونة والباقات بعد نقل الموقع إلى Hostinger بنفس مسارات الواجهة الحالية.
+{
+  const compatibilityImages = new Set();
+  const imageDb = new Database(join(ROOT, "data/sabaik.db"), { readonly: true });
+  for (const table of imageDb
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    .all()) {
+    const safeTable = String(table.name).replaceAll('"', '""');
+    const columns = imageDb.prepare(`PRAGMA table_info("${safeTable}")`).all();
+    for (const column of columns.filter((item) => String(item.type || "").toUpperCase().includes("TEXT"))) {
+      const safeColumn = String(column.name).replaceAll('"', '""');
+      for (const row of imageDb.prepare(`SELECT "${safeColumn}" AS value FROM "${safeTable}"`).iterate()) {
+        const value = typeof row.value === "string" ? row.value : "";
+        for (const match of value.matchAll(/(?:^|["'])\/images\/([^/"'\\\s?#]+)/g)) {
+          compatibilityImages.add(match[1]);
+        }
+      }
+    }
+  }
+  imageDb.close();
+  const sourceUploads = join(ROOT, "artifacts/sabaik-almasa/public/uploads");
+  const targetImages = join(ROOT, "build_php/images");
+  mkdirSync(targetImages, { recursive: true });
+  for (const filename of compatibilityImages) {
+    const target = join(targetImages, filename);
+    if (existsSync(target)) continue;
+    const source = join(sourceUploads, filename);
+    if (existsSync(source)) {
+      copyFileSync(source, target);
+      console.log(`  ✅ توافق مسار الصورة: /images/${filename}`);
+    }
+  }
+}
+
+// Some Hostinger/Nginx configurations do not honor DirectoryIndex for
+// static folders even when index.html exists. Keep PHP entry points beside
+// the prerendered hubs so /blog/ and /areas/ resolve without a directory
+// listing or a SPA fallback.
+for (const hub of ["blog", "areas"]) {
+  const hubDir = join(ROOT, "build_php", hub);
+  if (existsSync(join(hubDir, "index.html"))) {
+    writeFileSync(
+      join(hubDir, "index.php"),
+      `<?php readfile(__DIR__ . '/index.html');`,
+      "utf8",
+    );
+  }
+}
+// ضمان وجود ملف PHP API الأساسي في build_php/api/index.php
+mkdirSync(join(ROOT, "build_php/api"), { recursive: true });
+copyFileSync(join(ROOT, "scripts/api-index.php"), join(ROOT, "build_php/api/index.php"));
+copyFileSync(join(ROOT, "scripts/container-system.php"), join(ROOT, "build_php/api/container-system.php"));
+copyFileSync(join(ROOT, "artifacts/sabaik-almasa/public/robots.php"), join(ROOT, "build_php/robots.php"));
+// Hostinger has no environment-variable manager in the deployed PHP process.
+// Give each archive its own signing secret instead of shipping the historical
+// public fallback secret in the production API.
+{
+  const phpApiPath = join(ROOT, "build_php/api/index.php");
+  const phpApi = readFileSync(phpApiPath, "utf8");
+  const hostingerSecret = randomBytes(32).toString("hex");
+  writeFileSync(
+    phpApiPath,
+    phpApi.replaceAll("__HOSTINGER_TOKEN_SECRET__", hostingerSecret),
+    "utf8",
+  );
+}
+console.log("  ✅ تم تجهيز طبقة PHP لنظام الباقات التنظيف والمالية والتدقيق");
+console.log("  ✅ تم تجهيز ملف PHP API في build_php/api/index.php لبيئة Hostinger");
+
+// تأكد من حذف sitemap.xml الثابت من build_php/ إن وُجد من بناء سابق
+const staleStatic = join(ROOT, "build_php/sitemap.xml");
+if (existsSync(staleStatic)) rmSync(staleStatic);
+console.log("  ✅ assets/ + الملفات الثابتة + الصفحات المُولَّدة مسبقاً (prerendered) نُسخت");
+
+// ── 2b. نسخ صفحة CleanFlow Platform التسويقية ─────────────────────────────────
+step("نسخ صفحة CleanFlow Platform التسويقية → build_php/cleanflow-platform/");
+const platformDist = join(ROOT, "artifacts/sabaik-platform/dist/public");
+rmSync(join(ROOT, "build_php/hawiat-platform"), { recursive: true, force: true });
+const platformTarget = join(ROOT, "build_php/cleanflow-platform");
+rmSync(platformTarget, { recursive: true, force: true });
+mkdirSync(platformTarget, { recursive: true });
+cpSync(platformDist, platformTarget, { recursive: true });
+console.log("  ✅ صفحة CleanFlow + الشعار + الأصول نُسخت");
+
+// ── 3. تجهيز snapshot SQLite متسق ────────────────────────────────────────────
+step("تجهيز snapshot آمن لقاعدة البيانات الأصلية");
+
+{
+  const srcDb = new Database(join(ROOT, "data/sabaik.db"));
+  srcDb.close();
+  console.log("  ✅ SQLite source opened safely");
+}
+
+// ── 4. نسخ قاعدة البيانات مع تحويل order → sort_order ───────────────────────
+step("نسخ وتحويل قاعدة البيانات");
+
+const DEST_DB = join(ROOT, "build_php/data/sabaik.db");
+mkdirSync(dirname(DEST_DB), { recursive: true });
+
+// انسخ أولاً
+rmSync(DEST_DB, { force: true });
+const sourceDbSnapshot = new Database(join(ROOT, "data/sabaik.db"), { readonly: true });
+await sourceDbSnapshot.backup(DEST_DB);
+sourceDbSnapshot.close();
+console.log("  ✅ SQLite backup snapshot");
+
+{
+  const db = new Database(DEST_DB);
+
+  /**
+   * الجداول التي يُنشئها Drizzle بعمود `order`
+   * لكن PHP يقرأها بعمود `sort_order`
+   */
+  /**
+   * الجداول التي يُنشئها Drizzle بعمود `order`
+   * لكن PHP يقرأها بعمود `sort_order`
+   */
+  const SORT_ORDER_TABLES = [
+    "hero_slides",
+    "services",
+    "containers",
+    "packages",
+    "partners",
+    "company_values",
+  ];
+
+  db.transaction(() => {
+    // Resolve all legacy editorial mentions to the administrator-configured
+    // company name before the SQLite file is packaged. This keeps imported blog
+    // content and testimonials aligned with site settings on shared hosting.
+    const siteNameRow = db.prepare("SELECT value FROM site_settings WHERE key = 'company_name'").get();
+    const siteName = String(siteNameRow?.value || "").trim() || "الشركة";
+    const legacyNames = [
+      String.fromCodePoint(1587, 1576, 1575, 1574, 1610, 32, 1575, 1604, 1605, 1575, 1587, 1577),
+      String.fromCodePoint(1605, 1572, 1587, 1587, 1587, 1577, 32, 1587, 1576, 1575, 1574, 1610, 32, 1575, 1604, 1585, 1575, 1587, 1577),
+    ];
+    for (const table of db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all()) {
+      const safeTable = String(table.name).replaceAll('"', '""');
+      const textColumns = db.prepare(`PRAGMA table_info("${safeTable}")`).all()
+        .filter((column) => String(column.type || "").toUpperCase().includes("TEXT"));
+      for (const column of textColumns) {
+        const safeColumn = String(column.name).replaceAll('"', '""');
+        for (const legacyName of legacyNames) {
+          db.prepare(`UPDATE "${safeTable}" SET "${safeColumn}" = REPLACE("${safeColumn}", ?, ?) WHERE "${safeColumn}" LIKE ?`)
+            .run(legacyName, siteName, `%${legacyName}%`);
+        }
+      }
+    }
+    console.log(`  ✅ تم توحيد محتوى SQLite على اسم الموقع من الإعدادات: ${siteName}`);
+
+    // A previous import left NULL payloads in packages.size even though the
+    // column is declared NOT NULL. SQLite can serve those rows locally, but
+    // Hostinger's PDO SQLite integrity checks may reject the database and
+    // turn package reads into HTTP 500 responses. Normalize only the packaged
+    // copy; keep the development database untouched.
+    const normalizedPackageRows = db
+      .prepare(
+        "UPDATE packages SET " +
+        "size = COALESCE(size, ''), " +
+        "capacity = COALESCE(capacity, ''), " +
+        "description = COALESCE(description, ''), " +
+        "features = COALESCE(features, '[]'), " +
+        "suitable_for = COALESCE(suitable_for, '') " +
+        "WHERE typeof(size) = 'null' OR typeof(capacity) = 'null' " +
+        "OR typeof(description) = 'null' OR typeof(features) = 'null' " +
+        "OR typeof(suitable_for) = 'null'",
+      )
+      .run().changes;
+    if (normalizedPackageRows > 0) {
+      console.log(`  ✅ تم تنظيف ${normalizedPackageRows} سجلًا ناقصًا في بيانات الباقات`);
+    }
+
+    // ── جداول order → sort_order ─────────────────────────────────────────────
+    for (const table of SORT_ORDER_TABLES) {
+      const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+      const hasOrder     = cols.includes("order");
+      const hasSortOrder = cols.includes("sort_order");
+
+      if (!hasOrder && hasSortOrder) {
+        console.log(`  ⏭  ${table}: sort_order موجود مسبقاً — تخطي`);
+        continue;
+      }
+
+      if (!hasOrder && !hasSortOrder) {
+        db.prepare(`ALTER TABLE ${table} ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`).run();
+        console.log(`  ➕ ${table}: أضفت sort_order (القيم الافتراضية)`);
+        continue;
+      }
+
+      if (hasOrder && !hasSortOrder) {
+        db.prepare(`ALTER TABLE ${table} ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`).run();
+        db.prepare(`UPDATE ${table} SET sort_order = "order"`).run();
+        console.log(`  ✅ ${table}: order → sort_order (${db.prepare(`SELECT COUNT(*) AS c FROM ${table}`).get().c} سجل)`);
+      }
+
+      if (hasOrder && hasSortOrder) {
+        db.prepare(`UPDATE ${table} SET sort_order = "order" WHERE sort_order = 0 AND "order" != 0`).run();
+        console.log(`  🔄 ${table}: تزامن order → sort_order`);
+      }
+    }
+
+    // ── جدول ads: order → ad_order ───────────────────────────────────────────
+    {
+      const cols = db.prepare(`PRAGMA table_info(ads)`).all().map((c) => c.name);
+      const hasOrder   = cols.includes("order");
+      const hasAdOrder = cols.includes("ad_order");
+
+      if (!hasOrder && hasAdOrder) {
+        console.log(`  ⏭  ads: ad_order موجود مسبقاً — تخطي`);
+      } else if (!hasOrder && !hasAdOrder) {
+        db.prepare(`ALTER TABLE ads ADD COLUMN ad_order INTEGER NOT NULL DEFAULT 0`).run();
+        console.log(`  ➕ ads: أضفت ad_order (القيم الافتراضية)`);
+      } else if (hasOrder && !hasAdOrder) {
+        db.prepare(`ALTER TABLE ads ADD COLUMN ad_order INTEGER NOT NULL DEFAULT 0`).run();
+        db.prepare(`UPDATE ads SET ad_order = "order"`).run();
+        console.log(`  ✅ ads: order → ad_order (${db.prepare(`SELECT COUNT(*) AS c FROM ads`).get().c} سجل)`);
+      } else if (hasOrder && hasAdOrder) {
+        db.prepare(`UPDATE ads SET ad_order = "order" WHERE ad_order = 0 AND "order" != 0`).run();
+        console.log(`  🔄 ads: تزامن order → ad_order`);
+      }
+    }
+  })();
+
+  // ── 5. journal_mode=DELETE (WAL غير مدعوم على Hostinger) ──────────────────
+  db.pragma("journal_mode=DELETE");
+  console.log("  ✅ journal_mode=DELETE");
+
+  db.close();
+}
+
+// ── 6. تجهيز uploads ───────────────────────────────────────────────────────────
+// الصور الحالية للخدمات والباقات والشركاء والمدير التنفيذي أصبحت أصولاً
+// ثابتة داخل الواجهة. نحتفظ فقط بالصور المرفوعة التي ما زالت قاعدة البيانات
+// تشير إليها حتى لا تعود صور المشاريع القديمة إلى أرشيف Hostinger.
+step("تجهيز مجلد uploads بدون صور قديمة");
+const uploadsDir = join(ROOT, "build_php/uploads");
+rmSync(uploadsDir, { recursive: true, force: true });
+mkdirSync(uploadsDir, { recursive: true });
+// Uploads are written to the workspace root by the managed API workflow, while
+// older snapshots may still keep them under artifacts/api-server/uploads.
+// Search all portable locations so a Hostinger archive never drops a referenced
+// package or hero image simply because it was uploaded by a different workflow.
+const sourceUploadDirs = [
+  join(ROOT, "uploads"),
+  join(ROOT, "artifacts/api-server/uploads"),
+  join(ROOT, "artifacts/sabaik-almasa/public/uploads"),
+].filter((directory) => existsSync(directory));
+const referencedUploads = new Set();
+const uploadAliases = new Map();
+function decodeUploadFilename(value) {
+  let decoded = String(value || "");
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    // Keep the raw name so the missing-file warning identifies the bad value.
+  }
+  if (!decoded || decoded.includes("/") || decoded.includes("\\") || decoded.includes("\0")) return "";
+  return decoded;
+}
+const sourceDb = new Database(join(ROOT, "data/sabaik.db"), { readonly: true });
+try {
+  const tables = sourceDb
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    .all()
+    .map((row) => row.name);
+  for (const table of tables) {
+    const safeTable = table.replaceAll('"', '""');
+    const columns = sourceDb.prepare(`PRAGMA table_info("${safeTable}")`).all();
+    for (const column of columns) {
+      if (column.type && column.type !== "TEXT") continue;
+      const safeColumn = column.name.replaceAll('"', '""');
+      for (const row of sourceDb
+        .prepare(`SELECT "${safeColumn}" AS value FROM "${safeTable}" WHERE "${safeColumn}" LIKE '%/uploads/%'`)
+        .iterate()) {
+        const value = typeof row.value === "string" ? row.value : "";
+          for (const match of value.matchAll(/(?:\/api)?\/uploads\/([^/"'\\\]\s,}]+)/g)) {
+            const filename = decodeUploadFilename(match[1]);
+            if (filename) referencedUploads.add(filename);
+        }
+      }
+    }
+  }
+} finally {
+  sourceDb.close();
+}
+for (const filename of referencedUploads) {
+  const extension = filename.match(/\.([^.]+)$/)?.[1]?.toLowerCase() || "";
+  const webpFallback = extension && extension !== "webp"
+    ? `${filename.slice(0, -(extension.length + 1))}.webp`
+    : "";
+  const candidates = [filename, webpFallback].filter(Boolean);
+  let source = "";
+  let packagedFilename = "";
+  for (const candidate of candidates) {
+    const found = sourceUploadDirs.find((directory) => existsSync(join(directory, candidate)));
+    if (found) {
+      source = join(found, candidate);
+      packagedFilename = candidate;
+      break;
+    }
+  }
+  if (source) {
+    copyFileSync(source, join(uploadsDir, packagedFilename));
+    console.log(`  ✅ احتفظت بالصورة المستخدمة: ${packagedFilename}`);
+    if (packagedFilename !== filename) {
+      // Older records may keep .png/.jpg while only the optimized WebP is
+      // available. Point the packaged snapshot at the file we actually ship.
+      uploadAliases.set(filename, packagedFilename);
+    }
+    // Do not make Hostinger depend on a UTF-8 filesystem URL. Keep the
+    // original file for backwards compatibility, but expose an ASCII alias
+    // and rewrite packaged database references to that alias below.
+    if (/[^\x20-\x7e]/.test(filename)) {
+      const digest = createHash("sha256").update(filename, "utf8").digest("hex").slice(0, 12);
+      const sourceExtension = packagedFilename.match(/\.([^.]+)$/)?.[1]?.toLowerCase() || "webp";
+      const alias = `legacy-${digest}.${sourceExtension}`;
+      copyFileSync(source, join(uploadsDir, alias));
+      uploadAliases.set(filename, alias);
+      console.log(`  ✅ اسم توافق ASCII للصورة: ${alias}`);
+    }
+  } else {
+    console.warn(`  ⚠️ صورة مذكورة في قاعدة البيانات غير موجودة محلياً: ${filename}`);
+  }
+}
+
+// The source database can contain URLs saved before ASCII-only uploads were
+// introduced. Rewrite only the packaged snapshot; development data remains
+// untouched and the actual image bytes are preserved under the alias above.
+if (uploadAliases.size > 0) {
+  const packagedDb = new Database(DEST_DB);
+  packagedDb.transaction(() => {
+    const tables = packagedDb
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all()
+      .map((row) => row.name);
+    for (const table of tables) {
+      const safeTable = String(table).replaceAll('"', '""');
+      const columns = packagedDb.prepare(`PRAGMA table_info("${safeTable}")`).all();
+      for (const column of columns.filter((item) => String(item.type || "").toUpperCase().includes("TEXT"))) {
+        const safeColumn = String(column.name).replaceAll('"', '""');
+        for (const [original, alias] of uploadAliases) {
+          const encoded = encodeURIComponent(original);
+          const statement = packagedDb.prepare(`UPDATE "${safeTable}" SET "${safeColumn}" = REPLACE(REPLACE(REPLACE("${safeColumn}", ?, ?), ?, ?), ?, ?)`);
+          statement.run(
+            `/api/uploads/${encoded}`, `/api/uploads/${alias}`,
+            `/uploads/${encoded}`, `/uploads/${alias}`,
+            `/api/uploads/${original}`, `/api/uploads/${alias}`,
+          );
+        }
+      }
+    }
+  })();
+  packagedDb.close();
+  console.log(`  ✅ تم توحيد ${uploadAliases.size} رابط صورة قديم إلى أسماء ASCII في نسخة Hostinger`);
+}
+console.log(`  ✅ uploads/ يحتوي على ${referencedUploads.size} صورة مستخدمة فقط`);
+
+// ── 7. كتابة .htaccess مع إصلاح Authorization header ─────────────────────────
+step("كتابة ملفات .htaccess");
+
+writeFileSync(join(ROOT, "build_php/.htaccess"), `DirectoryIndex index.html index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ── Pass request headers through Apache (Hostinger strips them by default) ──
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},E=HTTP_X_HTTP_METHOD_OVERRIDE:%{HTTP:X-HTTP-Method-Override}]
+
+  # Block access to sensitive directories
+  RewriteRule ^data/  - [F,L]
+  RewriteRule ^\\\\\.     - [F,L]
+
+  # Resolve public SEO hubs explicitly so directory indexes cannot become 403s.
+  RewriteRule ^blog/?$ blog/index.html [END]
+  RewriteRule ^areas/?$ areas/index.html [END]
+  RewriteRule ^services/?$ services/index.html [END]
+
+  # Route /api/* to the PHP handler
+  RewriteRule ^api/  api/index.php  [L,QSA]
+
+  # Generate host-aware robots response.
+  RewriteRule ^robots\\.txt$ robots.php [END]
+
+  # Allow direct access to existing files and directories after special routes.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Never serve index.html as JavaScript/CSS. Missing hashed assets must be a
+  # real 404 so stale HTML cannot trigger a module MIME-type error.
+  RewriteRule ^assets/ - [END]
+
+  # SPA fallback — everything else loads index.html
+  RewriteRule ^  index.html  [L]
+</IfModule>
+`);
+
+writeFileSync(join(ROOT, "build_php/api/.htaccess"), `DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # ── Pass request headers through Apache (Hostinger strips them by default) ──
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},E=HTTP_X_HTTP_METHOD_OVERRIDE:%{HTTP:X-HTTP-Method-Override}]
+
+  RewriteRule ^ index.php [L,QSA]
+</IfModule>
+`);
+console.log("  ✅ .htaccess مكتوبان مع Authorization passthrough");
+
+// ── 7b. إنشاء Sitemap ثابت من قاعدة البيانات ──────────────────────────────────
+// Serve a real XML file on shared hosting even when rewrite rules are disabled
+// or stale. The admin API can still regenerate this file after content changes.
+step("إنشاء sitemap.xml ثابت من قاعدة البيانات");
+{
+  const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+  const phpCommand = [
+    "php",
+    "-r",
+    shellQuote([
+      "$_SERVER['REQUEST_METHOD']='GET';",
+      "$_SERVER['REQUEST_URI']='/api/sitemap/generate';",
+      "$_SERVER['HTTP_HOST']='';",
+      "require 'build_php/api/index.php';",
+    ].join(" ")),
+  ].join(" ");
+  const generated = execSync(phpCommand, { cwd: ROOT, encoding: "utf8" }).trim();
+  const sitemapData = JSON.parse(generated);
+  if (!sitemapData.xml || !sitemapData.xml.startsWith("<?xml")) {
+    throw new Error("تعذر إنشاء sitemap.xml بصيغة XML صحيحة");
+  }
+  writeFileSync(join(ROOT, "build_php/sitemap.xml"), sitemapData.xml, "utf8");
+  console.log(`  ✅ sitemap.xml ثابت — ${sitemapData.totalUrls} رابطًا`);
+}
+
+// ── 8. كتابة بصمة البناء وتعليمات النشر ───────────────────────────────────────
+// يجب أن تُستخرج محتويات هذا الأرشيف مباشرة إلى public_html، وليس إلى مجلد
+// فرعي باسم build_php؛ لأن مسارات /api و /uploads و /data تعتمد على جذر الموقع.
+step("كتابة معلومات النسخة وتعليمات النشر");
+{
+  const sourceDb = new Database(join(ROOT, "data/sabaik.db"), { readonly: true });
+  const tableCounts = {};
+  for (const table of sourceDb
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+    .all()) {
+    const safeTable = String(table.name).replaceAll('"', '""');
+    tableCounts[table.name] = sourceDb.prepare(`SELECT COUNT(*) AS count FROM "${safeTable}"`).get().count;
+  }
+  sourceDb.close();
+  writeFileSync(
+    join(ROOT, "build_php/BUILD_INFO.json"),
+    JSON.stringify({
+      buildType: "full-hostinger-archive",
+      builtAt: new Date().toISOString(),
+      sourceDatabase: "data/sabaik.db",
+      tableCounts,
+      deployment: "Extract the archive contents directly into public_html; do not keep a build_php subfolder.",
+    }, null, 2),
+    "utf8",
+  );
+  writeFileSync(
+    join(ROOT, "build_php/UPLOAD_INSTRUCTIONS.txt"),
+    [
+      "أرشيف كامل من آخر نسخة حالية للمشروع.",
+      "",
+      "طريقة النشر:",
+      "1) استخرج محتويات الأرشيف مباشرة داخل public_html.",
+      "2) يجب أن تكون index.html و api/ و data/ و uploads/ في جذر public_html.",
+      "3) لا تترك مجلداً باسم build_php داخل public_html.",
+      "4) خذ نسخة احتياطية من data/ و uploads/ قبل الاستبدال إذا كان الموقع يعمل مسبقاً.",
+      "",
+      "يشمل الأرشيف قاعدة البيانات وواجهة PHP والواجهة الرئيسية وCleanFlow Platform وجميع الأصول.",
+    ].join("\n"),
+    "utf8",
+  );
+  console.log(`  ✅ BUILD_INFO.json — ${tableCounts.posts ?? 0} مقالة و${tableCounts.container_system_records ?? 0} سجل باقات التنظيف`);
+}
+
+// ── 8. ضغط الأرشيف ───────────────────────────────────────────────────────────
+step("تنظيف اسم العلامة القديمة من ملفات Hostinger");
+{
+  const siteDb = new Database(DEST_DB, { readonly: true });
+  const siteNameRow = siteDb.prepare("SELECT value FROM site_settings WHERE key = 'company_name'").get();
+  siteDb.close();
+  const siteName = String(siteNameRow?.value || "").trim() || "الشركة";
+  const legacyPatterns = [
+    [/مؤسسة\s+مؤسسة\s+السهم\s+كلين/gu, siteName],
+    [/مؤسسة\s+السهم كلين\s+الماسة/gu, siteName],
+    [/شركة\s+السهم كلين\s+الماسة/gu, siteName],
+    [/السهم كلين\s+الماسة/gu, siteName],
+    [/منصة\s+باقات التنظيف/gu, siteName],
+  ];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      const file = join(dir, entry);
+      if (statSync(file).isDirectory()) walk(file);
+      else if (/\.(html?|js|css|json|xml|txt|php|webmanifest)$/i.test(entry)) {
+        const original = readFileSync(file, "utf8");
+        const clean = legacyPatterns.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), original);
+        if (clean !== original) writeFileSync(file, clean);
+      }
+    }
+  };
+  walk(join(ROOT, "build_php"));
+  console.log(`  ✅ ملفات الأرشيف تستخدم اسم الإعدادات: ${siteName}`);
+}
+
+step("إنشاء الأرشيف cleanflow-services-hostinger.zip");
+const zipPath = join(ROOT, "cleanflow-services-hostinger.zip");
+rmSync(zipPath, { force: true });
+
+if (process.platform === "win32") {
+  execSync(`powershell -Command "Compress-Archive -Path '${join(ROOT, "build_php")}' -DestinationPath '${zipPath}' -Force"`, { cwd: ROOT, stdio: "inherit" });
+} else {
+  // اضغط محتوى build_php لا المجلد نفسه؛ Hostinger يفك الأرشيف مباشرة داخل
+  // public_html، ولذلك يجب أن تكون index.html وapi/ وdata/ وuploads/ في الجذر.
+  run("cd build_php && zip -r ../cleanflow-services-hostinger.zip .", "zip");
+}
+
+if (existsSync(zipPath)) {
+  const sizeKb = Math.round(statSync(zipPath).size / 1024);
+  console.log(`\n${"═".repeat(60)}`);
+  console.log(`✅ الأرشيف جاهز: cleanflow-services-hostinger.zip (${sizeKb} KB)`);
+  console.log(`${"═".repeat(60)}\n`);
+}

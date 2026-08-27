@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CleanFlow Services"
+description = "موقع خدمات تنظيف بالرياض يعمل مع CleanFlow Platform لتشغيل الطلبات والفرق"
+version = "1.0.0"
+id = "artifacts/sabaik-almasa"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19770
+
+[services.development]
+run = "pnpm --filter @workspace/cleanflow-services run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cleanflow-services", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/sabaik-almasa/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19770"
+BASE_PATH = "/"

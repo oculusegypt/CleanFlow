@@ -47,3 +47,22 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Archives & Temporary Audit Dumps
+*.zip
+ziLRUOnO
+hawiat-update-patch/
+data1/
+build_php/
+build_patch/
+cleanflow-services-hostinger/
+cleanflow-services-hostinger14/
+sabaik-content-transfer-2026-08-17/
+*.json.bak
+comparison_report.json
+crawl_results.json
+keyword_pages_audit.json
+live_homepage_raw.html
+live_sitemap_raw.xml
+*.db-shm
+*.db-wal

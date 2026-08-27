@@ -1,0 +1,22 @@
+react-dom_client.js?v=6386edc6:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+index.js:62 Target website not loaded
+/api/settings?ts=1787789897602:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings?ts=1787789897601:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+login:1 Error while trying to use the following icon from the Manifest: https://c10f0227-96cd-4a36-ae15-793795976f2f-00-2c0nicbeddux.janeway.replit.dev/favicon.png (Download error or resource isn't a valid image)
+/api/settings:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/packages:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/packages:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings?ts=1787789908974:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/auth/login:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+/api/settings?ts=1787789943697:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SiteSettingsContext.tsx:264  GET https://c10f0227-96cd-4a36-ae15-793795976f2f-00-2c0nicbeddux.janeway.replit.dev/api/settings?ts=1787789955739 502 (Bad Gateway)
+fetchSettings @ SiteSettingsContext.tsx:264
+(anonymous) @ SiteSettingsContext.tsx:342
+(anonymous) @ SiteSettingsContext.tsx:360
+SiteSettingsContext.tsx:264  GET https://c10f0227-96cd-4a36-ae15-793795976f2f-00-2c0nicbeddux.janeway.replit.dev/api/settings?ts=1787790052442 502 (Bad Gateway)
+fetchSettings @ SiteSettingsContext.tsx:264
+(anonymous) @ SiteSettingsContext.tsx:342
+(anonymous) @ SiteSettingsContext.tsx:360

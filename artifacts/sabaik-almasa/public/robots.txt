@@ -1,0 +1,32 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# The production PHP response replaces this with the current request origin.
+
+# AI search crawlers follow the same public-content rules as other agents.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Bytespider
+Disallow: /
+

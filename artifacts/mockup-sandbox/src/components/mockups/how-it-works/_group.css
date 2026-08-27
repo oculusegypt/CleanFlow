@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+
+:root {
+  --button-outline: rgba(0, 0, 0, 0.1);
+  --badge-outline: rgba(0, 0, 0, 0.05);
+
+  --opaque-button-border-intensity: -8;
+
+  --elevate-1: rgba(0, 0, 0, 0.03);
+  --elevate-2: rgba(0, 0, 0, 0.08);
+
+  --primary: 207 72% 20%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 174 54% 43%;
+  --secondary-foreground: 207 72% 12%;
+
+  --accent: 43 66% 58%;
+  --accent-foreground: 207 72% 15%;
+
+  --background: 193 38% 97%;
+  --foreground: 207 72% 20%;
+
+  --border: 192 25% 88%;
+  --input: 192 25% 88%;
+  --ring: 174 54% 43%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 207 72% 20%;
+  --card-border: 192 25% 88%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 207 72% 20%;
+  --popover-border: 192 25% 88%;
+
+  --sidebar: 207 72% 20%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 207 55% 26%;
+  --sidebar-primary: 174 54% 43%;
+  --sidebar-primary-foreground: 207 72% 12%;
+  --sidebar-accent: 207 55% 26%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 174 54% 43%;
+
+  --muted: 190 28% 93%;
+  --muted-foreground: 207 20% 45%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --chart-1: 207 72% 20%;
+  --chart-2: 174 54% 43%;
+  --chart-3: 43 66% 58%;
+  --chart-4: 207 20% 45%;
+  --chart-5: 190 28% 93%;
+
+  --app-font-sans: 'Tajawal', 'Cairo', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: Menlo, monospace;
+  --radius: 1.1rem;
+
+  --shadow-2xs: 0 2px 10px rgba(22, 76, 88, 0.04);
+  --shadow-xs: 0 4px 12px rgba(22, 76, 88, 0.06);
+  --shadow-sm: 0 8px 22px rgba(22, 76, 88, 0.08);
+  --shadow: 0 12px 30px rgba(22, 76, 88, 0.1);
+  --shadow-md: 0 16px 38px rgba(22, 76, 88, 0.12);
+  --shadow-lg: 0 22px 48px rgba(22, 76, 88, 0.14);
+  --shadow-xl: 0 28px 60px rgba(22, 76, 88, 0.17);
+  --shadow-2xl: 0 34px 80px rgba(22, 76, 88, 0.19);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --muted-border: hsl(var(--muted));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
+}
+
+.dark {
+  --button-outline: rgba(255, 255, 255, 0.1);
+  --badge-outline: rgba(255, 255, 255, 0.05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
+  --background: 216 65% 6%;
+  --foreground: 0 0% 98%;
+  --border: 216 30% 18%;
+  --input: 216 30% 18%;
+  --ring: 46 65% 52%;
+  --card: 216 60% 9%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 216 30% 18%;
+  --sidebar: 216 65% 6%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 216 30% 18%;
+  --sidebar-primary: 46 65% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 216 60% 12%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring: 46 65% 52%;
+  --popover: 216 60% 9%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 216 30% 18%;
+  --primary: 46 65% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 216 30% 20%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 216 30% 14%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 216 30% 20%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --chart-1: 46 65% 52%;
+  --chart-2: 216 65% 40%;
+  --chart-3: 0 0% 75%;
+  --chart-4: 215 20% 65%;
+  --chart-5: 216 30% 14%;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
