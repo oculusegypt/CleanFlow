@@ -40,6 +40,19 @@ function setMeta(name: string, content: string, attr = "name") {
   el.content = content
 }
 
+function markMissingPage() {
+  const currentUrl = siteUrl(window.location.pathname)
+  setMeta("robots", "noindex, follow")
+  setMeta("googlebot", "noindex, follow")
+  let canonical = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null
+  if (!canonical) {
+    canonical = document.createElement("link")
+    canonical.rel = "canonical"
+    document.head.appendChild(canonical)
+  }
+  canonical.href = currentUrl
+}
+
 // ─── CTA Block ─────────────────────────────────────────────────────────────────
 function ArticleCTA({ onOpen, phoneCall, phoneWhatsapp, postTitle }: { onOpen: () => void; phoneCall: string; phoneWhatsapp: string; postTitle: string }) {
   const waHref = phoneWhatsapp
@@ -131,6 +144,7 @@ function ArticleCleaningPackages({ onOpen }: { onOpen: (size?: string) => void }
               <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                 <span className="text-secondary font-black text-sm">{c.price}</span>
                 <button
+                  onClick={() => onOpen(c.size)}
                   className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-primary/90 transition-colors"
                 >
                   اطلب الآن
@@ -221,7 +235,12 @@ export default function BlogPost() {
     setLoading(true)
     fetch(`${API_BASE}/api/posts/${encodeURIComponent(slug)}`)
       .then(r => {
-        if (!r.ok) { setNotFound(true); setLoading(false); return null }
+        if (!r.ok) {
+          markMissingPage()
+          setNotFound(true)
+          setLoading(false)
+          return null
+        }
         return r.json()
       })
       .then(d => {
@@ -323,7 +342,11 @@ export default function BlogPost() {
         script.textContent = JSON.stringify(schemas)
         document.head.appendChild(script)
       })
-      .catch(() => { setNotFound(true); setLoading(false) })
+      .catch(() => {
+        markMissingPage()
+        setNotFound(true)
+        setLoading(false)
+      })
 
     return () => {
       // cleanup schema on unmount

@@ -10,6 +10,7 @@ interface SEOOptions {
   ogImage?: string
   ogImageAlt?: string
   ogType?: string
+  robots?: string
 }
 
 function setMeta(attr: string, value: string, attrName = "name") {
@@ -37,6 +38,7 @@ export function useDocumentSEO({
   ogImage,
   ogImageAlt,
   ogType = "website",
+  robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
 }: SEOOptions) {
   const { companyName, publicUrl, isLoaded } = useSiteSettings()
 
@@ -68,6 +70,11 @@ export function useDocumentSEO({
     if (resolvedDescription) setMeta("description", resolvedDescription)
     if (resolvedKeywords)    setMeta("keywords",     resolvedKeywords)
     setMeta("application-name", brandName)
+    // Route-level pages can previously have set noindex (for example a stale
+    // SEO landing page). Always restore the normal indexable state when the
+    // user navigates to a valid public page.
+    setMeta("robots", robots)
+    setMeta("googlebot", robots)
 
     // Open Graph
     setMeta("og:title",       resolvedTitle, "property")
@@ -98,5 +105,5 @@ export function useDocumentSEO({
       if (prevDesc)  setMeta("description", prevDesc)
       if (prevCanon) setCanonical(prevCanon)
     }
-  }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, companyName, publicUrl, isLoaded])
+  }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, robots, companyName, publicUrl, isLoaded])
 }

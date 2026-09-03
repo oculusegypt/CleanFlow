@@ -1387,8 +1387,8 @@ for (const page of seoPages) {
         <p style="font-size:18px;font-weight:700;color:#2b6cb0;margin:0 0 8px">اطلب الخدمة الآن في الرياض</p>
         <p style="font-size:15px;color:#4a5568;margin:0 0 16px">اتصل بنا لتوضيح تفاصيل الطلب وتنسيق الموعد المناسب.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <a href="tel:${esc(sitePhoneCall)}" style="background:#2b6cb0;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">📞 ${esc(sitePhoneCall)}</a>
-          <a href="${waLink(sitePhoneWhatsapp, `طلب خدمة بخصوص: ${page.title}`)}" style="background:#25d366;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">واتساب ↗</a>
+          <a href="tel:${esc(sitePhoneCall)}" style="background:#2b6cb0;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">اتصال مباشر: ${esc(sitePhoneCall)}</a>
+          <a href="${waLink(sitePhoneWhatsapp, `طلب خدمة بخصوص: ${page.title}`)}" style="background:#25d366;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">تواصل عبر واتساب</a>
         </div>
       </div>
     </article>`;

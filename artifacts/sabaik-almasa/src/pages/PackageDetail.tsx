@@ -69,7 +69,10 @@ export default function PackageDetail() {
   }, [apiCleaningPackages, slug])
 
   const { call: callNumber, whatsapp: whatsappNumber } = resolveContactNumbers(phoneCall, phoneWhatsapp, phones)
-  const packageCanonical = siteUrl(`/cleaning-packages/${slug}`)
+  // All legacy and generated aliases resolve to one stable package URL. This
+  // keeps the hydrated page aligned with the prerendered canonical.
+  const packageSlug = container ? getPackageRouteSlug(container) : slug
+  const packageCanonical = siteUrl(`/cleaning-packages/${encodeURIComponent(packageSlug)}`)
   const packageDescription = container?.description
     ? sanitizePackageText(container.description)
     : "تفاصيل باقات تنظيف المنازل والفلل بالرياض حسب نوع العقار ونطاق العمل."

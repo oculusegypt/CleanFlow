@@ -59,6 +59,19 @@ function removeSeoArtifacts() {
   document.getElementById("seo-page-schema")?.remove()
 }
 
+function markMissingPage() {
+  const currentUrl = siteUrl(window.location.pathname)
+  setMeta("robots", "noindex, follow")
+  setMeta("googlebot", "noindex, follow")
+  let canonical = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null
+  if (!canonical) {
+    canonical = document.createElement("link")
+    canonical.rel = "canonical"
+    document.head.appendChild(canonical)
+  }
+  canonical.href = currentUrl
+}
+
 function PublicCta({
   onOpen,
   phoneCall,
@@ -122,6 +135,7 @@ export default function SeoPage() {
   useEffect(() => {
     if (!isLoaded) return
     if (!slug) {
+      markMissingPage()
       setNotFound(true)
       setLoading(false)
       return
@@ -212,6 +226,7 @@ export default function SeoPage() {
       })
       .catch(() => {
         if (cancelled) return
+        markMissingPage()
         setPage(null)
         setNotFound(true)
         setLoading(false)

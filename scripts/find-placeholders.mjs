@@ -1,8 +1,11 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 
-const dbPath = path.resolve('data/sabaik.db');
-const db = new Database(dbPath);
+const root = path.resolve(new URL('.', import.meta.url).pathname, '..');
+const require = createRequire(path.join(root, 'lib', 'db', 'package.json'));
+const Database = require('better-sqlite3');
+const dbPath = path.join(root, 'data', 'sabaik.db');
+const db = new Database(dbPath, { readonly: true });
 
 const rows = db.prepare(`
   SELECT id, title, slug, excerpt, content, target_keyword, status, is_active
