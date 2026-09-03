@@ -111,6 +111,30 @@ const NEIGHBORHOODS = [
   { slug: "al-futah", name: "حي الفوطة" },
 ];
 
+const LEGACY_PACKAGE_ROUTE_SLUGS: Record<number, string> = {
+  1: "tanzeef-shaqaq",
+  2: "tanzeef-filal",
+  3: "tanzeef-qosoor",
+  4: "tanzeef-qabl-alnaql",
+  5: "gaseel-majalis-bukhar",
+  6: "jaly-rakham",
+  7: "tanzeef-khazanat",
+  8: "gaseel-mokeyafat",
+  9: "mokafahat-hasharat",
+  10: "tanzeef-bad-albenaa",
+  11: "tanzeef-wajahat",
+  12: "tanzeef-masajid",
+  13: "shahadat-salama",
+  14: "tarkeeb-anthimat-wiqaya",
+  15: "taqreer-fanni-fawri",
+  16: "taqreer-fanni-ghayr-fawri",
+  17: "aqd-siyana-difaa-madani",
+};
+
+function getPackageRouteSlug(pkg: { id?: number; seoSlug?: string }): string {
+  return (pkg.id ? LEGACY_PACKAGE_ROUTE_SLUGS[pkg.id] : undefined) || pkg.seoSlug || "";
+}
+
 function getStaticPages(base: string, siteName: string) {
   return [
     { path: "/",                               priority: "1.0",  freq: "weekly",  images: [
@@ -246,12 +270,13 @@ async function buildXml(baseUrl: string): Promise<{ xml: string; totalUrls: numb
   }
 
   // Dynamic container pages
-  let seoCleaningPackages: Array<{ seoSlug: string; seoTitle: string; images: string; title: string }> = [];
+  let seoCleaningPackages: Array<{ id?: number; seoSlug: string; seoTitle: string; images: string; title: string }> = [];
   try {
     const crows = await db.select().from(packagesTable).orderBy(asc(packagesTable.order));
     seoCleaningPackages = (crows as any[])
       .filter(r => r.seo_enabled || r.seoEnabled)
       .map(r => ({
+        id:       r.id,
         seoSlug:  r.seo_slug  || r.seoSlug  || "",
         seoTitle: r.seo_title || r.seoTitle  || r.title || "",
         images:   r.images ?? "[]",
@@ -294,7 +319,7 @@ async function buildXml(baseUrl: string): Promise<{ xml: string; totalUrls: numb
 
   // Dynamic container pages
   for (const c of seoCleaningPackages) {
-    const url = `${baseUrl}/cleaning-packages/${c.seoSlug}`;
+    const url = `${baseUrl}/cleaning-packages/${getPackageRouteSlug(c)}`;
     let imgs: Array<{ loc: string; title: string }> = [];
     try {
       const parsed: string[] = JSON.parse(c.images || "[]");

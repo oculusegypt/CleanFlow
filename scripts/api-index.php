@@ -892,10 +892,29 @@ try {
         // Packages
         $pkgCount = 0;
         try {
-            $pkgStmt = $pdo->query("SELECT seo_slug, name, images, image_url FROM packages WHERE is_active = 1 AND seo_enabled = 1");
+            $pkgStmt = $pdo->query("SELECT id, seo_slug, name, images, image_url FROM packages WHERE is_active = 1 AND seo_enabled = 1");
             $pkgs = $pkgStmt->fetchAll();
+            $legacyPackageRouteSlugs = [
+                1 => 'tanzeef-shaqaq',
+                2 => 'tanzeef-filal',
+                3 => 'tanzeef-qosoor',
+                4 => 'tanzeef-qabl-alnaql',
+                5 => 'gaseel-majalis-bukhar',
+                6 => 'jaly-rakham',
+                7 => 'tanzeef-khazanat',
+                8 => 'gaseel-mokeyafat',
+                9 => 'mokafahat-hasharat',
+                10 => 'tanzeef-bad-albenaa',
+                11 => 'tanzeef-wajahat',
+                12 => 'tanzeef-masajid',
+                13 => 'shahadat-salama',
+                14 => 'tarkeeb-anthimat-wiqaya',
+                15 => 'taqreer-fanni-fawri',
+                16 => 'taqreer-fanni-ghayr-fawri',
+                17 => 'aqd-siyana-difaa-madani',
+            ];
             foreach ($pkgs as $pkg) {
-                $slug = $pkg['seo_slug'] ?: '';
+                $slug = $legacyPackageRouteSlugs[(int)($pkg['id'] ?? 0)] ?? ($pkg['seo_slug'] ?: '');
                 if (!$slug) continue;
                 $u = $baseUrl . '/cleaning-packages/' . $slug;
                 $lines[] = '  <url>';

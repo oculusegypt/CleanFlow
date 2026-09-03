@@ -33,71 +33,91 @@ export function PublicRoutes() {
         <Route path="/" component={Home} />
         <Route path="/blog/:slug" component={BlogPost} />
         <Route path="/blog" component={Blog} />
-        <Route path="/المدونة" component={Blog} />
-        <Route path="/المدونة/:slug" component={BlogPost} />
+        <Route path="/المدونة/:slug">
+          {() => { const [, p] = useRoute("/المدونة/:slug"); return <Redirect to={`/blog/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/المدونة"><Redirect to="/blog" /></Route>
         <Route path="/news/:slug">
           {() => { const [, p] = useRoute("/news/:slug"); return <Redirect to={`/blog/${p?.slug ?? ""}`} /> }}
         </Route>
         <Route path="/news"><Redirect to="/blog" /></Route>
 
         <Route path="/about" component={AboutPage} />
-        <Route path="/about/" component={AboutPage} />
-        <Route path="/من-نحن" component={AboutPage} />
+        <Route path="/about/"><Redirect to="/about" /></Route>
+        <Route path="/من-نحن"><Redirect to="/about" /></Route>
 
         <Route path="/contact" component={ContactPage} />
-        <Route path="/contact/" component={ContactPage} />
-        <Route path="/اتصل-بنا" component={ContactPage} />
-        <Route path="/اتصل-الآن" component={CallNowPage} />
+        <Route path="/contact/"><Redirect to="/contact" /></Route>
+        <Route path="/اتصل-بنا"><Redirect to="/contact" /></Route>
+        <Route path="/اتصل-الآن"><Redirect to="/call-now" /></Route>
         <Route path="/call-now" component={CallNowPage} />
 
         <Route path="/faq" component={FaqPage} />
-        <Route path="/faq/" component={FaqPage} />
-        <Route path="/الأسئلة-الشائعة" component={FaqPage} />
+        <Route path="/faq/"><Redirect to="/faq" /></Route>
+        <Route path="/الأسئلة-الشائعة"><Redirect to="/faq" /></Route>
 
         <Route path="/privacy" component={PrivacyPage} />
-        <Route path="/privacy/" component={PrivacyPage} />
-        <Route path="/سياسة-الخصوصية" component={PrivacyPage} />
+        <Route path="/privacy/"><Redirect to="/privacy" /></Route>
+        <Route path="/سياسة-الخصوصية"><Redirect to="/privacy" /></Route>
 
         <Route path="/terms" component={TermsPage} />
-        <Route path="/terms/" component={TermsPage} />
-        <Route path="/الشروط-والأحكام" component={TermsPage} />
+        <Route path="/terms/"><Redirect to="/terms" /></Route>
+        <Route path="/الشروط-والأحكام"><Redirect to="/terms" /></Route>
 
         <Route path="/partners" component={PartnersPage} />
-        <Route path="/partners/" component={PartnersPage} />
+        <Route path="/partners/"><Redirect to="/partners" /></Route>
 
         <Route path="/services" component={ServicesPage} />
-        <Route path="/services/" component={ServicesPage} />
+        <Route path="/services/"><Redirect to="/services" /></Route>
         <Route path="/services/:slug" component={ServiceDetail} />
-        <Route path="/services/:slug/" component={ServiceDetail} />
-        <Route path="/خدماتنا/:slug" component={ServiceDetail} />
+        <Route path="/services/:slug/">
+          {() => { const [, p] = useRoute("/services/:slug/"); return <Redirect to={`/services/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/خدماتنا/:slug">
+          {() => { const [, p] = useRoute("/خدماتنا/:slug"); return <Redirect to={`/services/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
 
         {/* Keep the former URL useful without exposing the retired pricing page. */}
         <Route path="/pricing"><Redirect to="/cleaning-packages" /></Route>
         <Route path="/pricing/"><Redirect to="/cleaning-packages" /></Route>
         <Route path="/الأسعار"><Redirect to="/cleaning-packages" /></Route>
         <Route path="/offers" component={OffersPage} />
-        <Route path="/offers/" component={OffersPage} />
-        <Route path="/العروض" component={OffersPage} />
+        <Route path="/offers/"><Redirect to="/offers" /></Route>
+        <Route path="/العروض"><Redirect to="/offers" /></Route>
 
         <Route path="/cleaning-packages" component={PackagesPage} />
         <Route path="/cleaning-packages/fire-safety" component={PackagesPage} />
         <Route path="/cleaning-packages/:slug" component={PackageDetail} />
-        <Route path="/packages" component={PackagesPage} />
-        <Route path="/packages/" component={PackagesPage} />
+        <Route path="/packages"><Redirect to="/cleaning-packages" /></Route>
+        <Route path="/packages/"><Redirect to="/cleaning-packages" /></Route>
 
         <Route path="/areas" component={AreasIndexPage} />
-        <Route path="/areas/" component={AreasIndexPage} />
-        <Route path="/المناطق" component={AreasIndexPage} />
+        <Route path="/areas/"><Redirect to="/areas" /></Route>
+        <Route path="/المناطق"><Redirect to="/areas" /></Route>
         <Route path="/areas/:slug" component={NeighborhoodPage} />
-        <Route path="/areas/:slug/" component={NeighborhoodPage} />
-        <Route path="/الأحياء/:slug" component={NeighborhoodPage} />
+        <Route path="/areas/:slug/">
+          {() => { const [, p] = useRoute("/areas/:slug/"); return <Redirect to={`/areas/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/الأحياء/:slug">
+          {() => { const [, p] = useRoute("/الأحياء/:slug"); return <Redirect to={`/areas/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
 
         <Route path="/page/:slug" component={SeoPage} />
-        <Route path="/page/:slug/" component={SeoPage} />
-        <Route path="/pages/:slug" component={SeoPage} />
-        <Route path="/pages/:slug/" component={SeoPage} />
-        <Route path="/صفحة/:slug" component={SeoPage} />
-        <Route path="/صفحات/:slug" component={SeoPage} />
+        <Route path="/page/:slug/">
+          {() => { const [, p] = useRoute("/page/:slug/"); return <Redirect to={`/page/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/pages/:slug">
+          {() => { const [, p] = useRoute("/pages/:slug"); return <Redirect to={`/page/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/pages/:slug/">
+          {() => { const [, p] = useRoute("/pages/:slug/"); return <Redirect to={`/page/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/صفحة/:slug">
+          {() => { const [, p] = useRoute("/صفحة/:slug"); return <Redirect to={`/page/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
+        <Route path="/صفحات/:slug">
+          {() => { const [, p] = useRoute("/صفحات/:slug"); return <Redirect to={`/page/${encodeURIComponent(decodeURIComponent(p?.slug ?? ""))}`} /> }}
+        </Route>
 
         <Route path="/why-us/leadership" component={WhyUsLeadership} />
         <Route path="/why-us/what-we-do" component={WhyUsWhatWe} />

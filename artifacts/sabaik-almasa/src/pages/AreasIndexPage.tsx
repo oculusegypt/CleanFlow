@@ -96,9 +96,8 @@ export default function AreasIndexPage() {
                     {group.slugs.map(slug => {
                       const area = AREAS[slug]
                       if (!area) return null
-                      const arabicSlug = ARABIC_AREA_SLUGS[slug] || slug
                       return (
-                        <Link key={slug} href={`/areas/${encodeURIComponent(arabicSlug)}`}>
+                        <Link key={slug} href={`/areas/${encodeURIComponent(slug)}`}>
                           <span className="group flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-gray-800 hover:bg-primary hover:text-white transition-colors cursor-pointer">
                             <span>
                               <span className="block font-bold">{area.name}</span>

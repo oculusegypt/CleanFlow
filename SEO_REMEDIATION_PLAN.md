@@ -44,9 +44,9 @@
 
 - [x] بناء Vite وprerender وأرشيف Hostinger من المصدر الحالي.
 - [x] فحص sitemap داخل الأرشيف وفحص عينة من الروابط.
-- [ ] أخذ نسخة احتياطية ثم رفع الأرشيف إلى Hostinger.
+- [x] أخذ نسخة احتياطية ثم رفع الأرشيف إلى Hostinger.
 - [ ] فحص sitemap وrobots وHTML وcanonical وindexability من Production.
-- [ ] إرسال sitemap إلى Google Search Console.
+- [x] إرسال sitemap إلى Google Search Console.
 
 ### المرحلة 5 — القياس والمتابعة
 

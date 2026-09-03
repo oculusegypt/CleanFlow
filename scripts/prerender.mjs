@@ -1189,7 +1189,6 @@ console.log(`\n📦 إنشاء ${containers.length} صفحة باقات نظاف
 for (const c of containers) {
   const slug      = packageRouteSlug(c);
   if (!slug) continue;
-  const sourceSlug = c.seo_slug;
   const canonical = `${SITE_URL}/cleaning-packages/${encodeURIComponent(slug)}`;
   const title     = c.seo_title || `${c.name} بالرياض | ${siteCompanyName}`;
      const desc      = sanitizeClaims(c.seo_description || c.description?.substring(0, 160) || "");
@@ -1298,9 +1297,6 @@ for (const c of containers) {
   });
 
   savePage(`cleaning-packages/${slug}`, html);
-  if (sourceSlug && sourceSlug !== slug) {
-    savePage(`cleaning-packages/${sourceSlug}`, html);
-  }
 }
 console.log(`   ✅ ${containers.length} باقة نظافة`);
 
@@ -1406,9 +1402,8 @@ for (const page of seoPages) {
   });
 
   savePage(`page/${page.slug}`, html);
-  savePage(`pages/${page.slug}`, html);
 }
-console.log(`   ✅ ${seoPages.length} صفحة SEO (مولدة كـ /page/ و /pages/)`);
+console.log(`   ✅ ${seoPages.length} صفحة SEO (مولدة كـ /page/)`);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 5. صفحة الأسعار القديمة — متوقفة عمداً ولا تُولّد ضمن الموقع.
@@ -1605,7 +1600,6 @@ if (false) {
     bodyContent
   });
   savePage("faq", html);
-  savePage("الأسئلة-الشائعة", html);
   console.log(`   ✅ صفحة الأسئلة الشائعة /faq`);
 }
 
@@ -1644,7 +1638,6 @@ if (false) {
     bodyContent
   });
   savePage("privacy", html);
-  savePage("سياسة-الخصوصية", html);
   console.log(`   ✅ صفحة سياسة الخصوصية /privacy`);
 }
 
@@ -1681,7 +1674,6 @@ if (false) {
     bodyContent
   });
   savePage("terms", html);
-  savePage("الشروط-والأحكام", html);
   console.log(`   ✅ صفحة الشروط والأحكام /terms`);
 }
 
@@ -1768,7 +1760,6 @@ if (false) {
     breadcrumbs: [{ name: "الرئيسية", url: SITE_URL }, { name: "اتصل الآن", url: canonical }],
     bodyContent,
   });
-  savePage("اتصل-الآن", html);
   savePage("call-now", html);
   console.log("   ✅ صفحة الاتصال السريع /اتصل-الآن");
 }
@@ -1825,7 +1816,6 @@ if (false) {
     bodyContent
   });
   savePage("contact", html);
-  savePage("اتصل-بنا", html);
   console.log(`   ✅ صفحة اتصل بنا /contact`);
 }
 
@@ -1881,7 +1871,6 @@ if (false) {
     bodyContent
   });
   savePage("about", html);
-  savePage("من-نحن", html);
   console.log(`   ✅ صفحة من نحن /about`);
 }
 
@@ -2007,8 +1996,7 @@ const REGION_PROFILES = {
 console.log(`\n🗺️  إنشاء ${NEIGHBORHOODS.length} صفحة أحياء الرياض...`);
 
 for (const area of NEIGHBORHOODS) {
-  const arSlug     = ARABIC_AREA_SLUGS[area.slug] || area.slug;
-  const canonical  = `${SITE_URL}/areas/${encodeURIComponent(arSlug)}`;
+  const canonical  = `${SITE_URL}/areas/${encodeURIComponent(area.slug)}`;
   const location   = area.name.includes("الرياض") ? area.name : `${area.name} بالرياض`;
   const h1         = `شركة تنظيف منازل وفلل ومكاتب في ${location}`;
   const title      = `شركة تنظيف منازل وفلل ${location} | ${siteCompanyName} — ${sitePhoneWhatsapp}`;
@@ -2049,8 +2037,7 @@ for (const area of NEIGHBORHOODS) {
     ? `<div style="margin-top:24px"><p style="font-weight:700;color:#1a202c;margin-bottom:12px">مناطق قريبة نخدمها:</p>
        <div style="display:flex;flex-wrap:wrap;gap:8px">
          ${area.related.map(r => {
-           const relAr = ARABIC_AREA_SLUGS[r] || r;
-           return `<a href="${SITE_URL}/areas/${encodeURIComponent(relAr)}" style="padding:6px 16px;background:#ebf4ff;color:#2b6cb0;border-radius:20px;font-size:14px;text-decoration:none">${AREA_NAMES[r] || r}</a>`;
+           return `<a href="${SITE_URL}/areas/${encodeURIComponent(r)}" style="padding:6px 16px;background:#ebf4ff;color:#2b6cb0;border-radius:20px;font-size:14px;text-decoration:none">${AREA_NAMES[r] || r}</a>`;
          }).join("")}
        </div></div>`
     : "";
@@ -2143,11 +2130,8 @@ for (const area of NEIGHBORHOODS) {
   });
 
   savePage(`areas/${area.slug}`, html);
-  if (arSlug !== area.slug) {
-    savePage(`areas/${arSlug}`, html);
-  }
 }
-console.log(`   ✅ ${NEIGHBORHOODS.length} صفحة حي (بالعربي والإنجليزي)`);
+console.log(`   ✅ ${NEIGHBORHOODS.length} صفحة حي بالروابط الإنجليزية الأساسية`);
 
 // ── صفحة دليل المناطق /areas/index.html ──────────────────────────────────────
 {

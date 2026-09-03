@@ -535,11 +535,11 @@ export function resolveArea(rawSlug: string) {
   if (!rawSlug) return null
   const decoded = decodeURIComponent(rawSlug).trim()
   if (AREAS[decoded]) {
-    return { key: decoded, area: AREAS[decoded], slug: ARABIC_AREA_SLUGS[decoded] || decoded }
+    return { key: decoded, area: AREAS[decoded], slug: decoded }
   }
   for (const [enKey, arSlug] of Object.entries(ARABIC_AREA_SLUGS)) {
     if (arSlug === decoded || arSlug.replace(/^حي-/, "") === decoded.replace(/^حي-/, "")) {
-      return { key: enKey, area: AREAS[enKey], slug: arSlug }
+      return { key: enKey, area: AREAS[enKey], slug: enKey }
     }
   }
   return null
@@ -835,11 +835,10 @@ export default function NeighborhoodPage() {
                 {area.relatedAreas.map((r) => {
                   const rel = AREAS[r]
                   if (!rel) return null
-                  const relArabicSlug = ARABIC_AREA_SLUGS[r] || r
                   return (
                     <Link
                       key={r}
-                      href={`/areas/${encodeURIComponent(relArabicSlug)}`}
+                      href={`/areas/${encodeURIComponent(r)}`}
                       className="px-4 py-2 bg-white border border-slate-200 hover:border-primary text-slate-800 hover:text-primary rounded-xl font-semibold text-sm transition shadow-sm"
                     >
                       {rel.name}

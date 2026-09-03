@@ -24,6 +24,25 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const require = createRequire(join(ROOT, "lib", "db", "package.json"));
 const Database = require("better-sqlite3");
+const LEGACY_PACKAGE_ROUTE_SLUGS = {
+  1: "tanzeef-shaqaq",
+  2: "tanzeef-filal",
+  3: "tanzeef-qosoor",
+  4: "tanzeef-qabl-alnaql",
+  5: "gaseel-majalis-bukhar",
+  6: "jaly-rakham",
+  7: "tanzeef-khazanat",
+  8: "gaseel-mokeyafat",
+  9: "mokafahat-hasharat",
+  10: "tanzeef-bad-albenaa",
+  11: "tanzeef-wajahat",
+  12: "tanzeef-masajid",
+  13: "shahadat-salama",
+  14: "tarkeeb-anthimat-wiqaya",
+  15: "taqreer-fanni-fawri",
+  16: "taqreer-fanni-ghayr-fawri",
+  17: "aqd-siyana-difaa-madani",
+};
 function run(cmd, label, envVars = {}) {
   console.log(`\n▶ ${label}`);
   execSync(cmd, { cwd: ROOT, stdio: "inherit", env: { ...process.env, ...envVars } });
@@ -78,7 +97,11 @@ rmSync(join(ROOT, "build_php/images"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/container"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/api/uploads"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/sabaik-platform"), { recursive: true, force: true });
-for (const generatedRoute of ["blog", "services", "cleaning-packages", "areas", "page", "pages", "pricing"]) {
+for (const generatedRoute of [
+  "blog", "services", "cleaning-packages", "areas", "page", "pages", "pricing",
+  "about", "من-نحن", "contact", "اتصل-بنا", "call-now", "اتصل-الآن",
+  "faq", "الأسئلة-الشائعة", "privacy", "سياسة-الخصوصية", "terms", "الشروط-والأحكام",
+]) {
   rmSync(join(ROOT, "build_php", generatedRoute), { recursive: true, force: true });
 }
 
@@ -478,6 +501,29 @@ console.log(`  ✅ uploads/ يحتوي على ${referencedUploads.size} صورة
 // ── 7. كتابة .htaccess مع إصلاح Authorization header ─────────────────────────
 step("كتابة ملفات .htaccess");
 
+const packageAliasRedirects = (() => {
+  const db = new Database(DEST_DB, { readonly: true });
+  let rows = [];
+  try {
+    rows = db.prepare("SELECT id, seo_slug FROM packages WHERE is_active = 1 AND seo_enabled = 1").all();
+  } catch {
+    try {
+      rows = db.prepare("SELECT id, seo_slug FROM containers WHERE is_active = 1 AND seo_enabled = 1").all();
+    } catch {}
+  }
+  db.close();
+  const escapeRule = (value) => String(value).replace(/[\\.^$|?*+()[\]{}]/g, "\\$&");
+  return rows
+    .map((row) => {
+      const canonical = LEGACY_PACKAGE_ROUTE_SLUGS[row.id] || row.seo_slug || "";
+      const alias = row.seo_slug || "";
+      if (!canonical || !alias || canonical === alias) return "";
+      return `  RewriteRule ^cleaning-packages/${escapeRule(alias)}/?$ /cleaning-packages/${canonical} [R=301,L,NE]`;
+    })
+    .filter(Boolean)
+    .join("\n");
+})();
+
 writeFileSync(join(ROOT, "build_php/.htaccess"), `DirectoryIndex index.html index.php
 
 <IfModule mod_rewrite.c>
@@ -496,8 +542,26 @@ writeFileSync(join(ROOT, "build_php/.htaccess"), `DirectoryIndex index.html inde
   RewriteRule ^areas/?$ areas/index.html [END]
   RewriteRule ^services/?$ services/index.html [END]
 
-  # Retire legacy URLs so they do not compete with the current Arabic canonicals.
+  # Retire legacy and translated aliases so they do not compete with canonical URLs.
+  RewriteRule ^من-نحن/?$ /about [R=301,L,NE]
+  RewriteRule ^اتصل-بنا/?$ /contact [R=301,L,NE]
+  RewriteRule ^اتصل-الآن/?$ /call-now [R=301,L,NE]
+  RewriteRule ^الأسئلة-الشائعة/?$ /faq [R=301,L,NE]
+  RewriteRule ^سياسة-الخصوصية/?$ /privacy [R=301,L,NE]
+  RewriteRule ^الشروط-والأحكام/?$ /terms [R=301,L,NE]
+  RewriteRule ^المدونة/?$ /blog [R=301,L,NE]
+  RewriteRule ^المدونة/(.+)$ /blog/$1 [R=301,L,NE]
+  RewriteRule ^العروض/?$ /offers [R=301,L,NE]
+  RewriteRule ^المناطق/?$ /areas [R=301,L,NE]
+  RewriteRule ^الأسعار/?$ /cleaning-packages [R=301,L,NE]
+  RewriteRule ^packages/?$ /cleaning-packages [R=301,L,NE]
+  RewriteRule ^خدماتنا/(.+)$ /services/$1 [R=301,L,NE]
+  RewriteRule ^الأحياء/(.+)$ /areas/$1 [R=301,L,NE]
+  RewriteRule ^صفحة/(.+)$ /page/$1 [R=301,L,NE]
+  RewriteRule ^صفحات/(.+)$ /page/$1 [R=301,L,NE]
+  RewriteRule ^pages/(.+)$ /page/$1 [R=301,L,NE]
   RewriteRule ^pricing/?$ /cleaning-packages [R=301,L,NE]
+${packageAliasRedirects}
   RewriteRule ^services/tanzeef-shaqaq-alryad/?$ /services/تنظيف-شقق-بالرياض [R=301,L,NE]
   RewriteRule ^services/tanzeef-filal-alryad/?$ /services/تنظيف-فلل-وقصور-بالرياض [R=301,L,NE]
   RewriteRule ^services/gaseel-majalis-bukhar-alryad/?$ /services/غسيل-مجالس-بالبخار-بالرياض [R=301,L,NE]
