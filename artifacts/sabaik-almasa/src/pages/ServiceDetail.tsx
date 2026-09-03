@@ -28,6 +28,7 @@ import { ServiceRequestForm } from "@/components/home/ServiceRequestForm"
 import { useDocumentSEO } from "@/hooks/useDocumentSEO"
 import { siteUrl } from "@/lib/siteUrl"
 import { useSiteSettings } from "@/context/SiteSettingsContext"
+import { buildLocalBusinessSchema } from "@/lib/structuredData"
 import { RIYADH_AREA_GROUPS, AREAS, ARABIC_AREA_SLUGS } from "@/pages/NeighborhoodPage"
 import { ServiceReviewsSection } from "@/components/reviews/ServiceReviewsSection"
 
@@ -130,7 +131,8 @@ export default function ServiceDetail() {
   const slug = params?.slug ? decodeURIComponent(params.slug) : ""
   const { data: services, isLoading } = useGetServices()
   const [service, setService] = useState<Service | null>(null)
-  const { phoneCall, phoneWhatsapp, companyName } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { phoneCall, phoneWhatsapp, companyName } = siteSettings
 
   useEffect(() => {
     if (!services) return
@@ -168,21 +170,15 @@ export default function ServiceDetail() {
           "@type": "Service",
           "name": service.title,
           "description": metaText,
-          "provider": {
-            "@type": "LocalBusiness",
-            "name": resolvedCompany,
-          "telephone": `+966${(phoneCall || "0554498403").replace(/[^\d]/g, "").replace(/^0/, "")}`,
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "طريق الملك فهد، حي الصحافة",
-              "addressLocality": "الرياض",
-              "addressRegion": "منطقة الرياض",
-              "addressCountry": "SA"
-            }
-          },
+          "provider": buildLocalBusinessSchema(siteSettings, {
+            description: metaText,
+            areaServed: siteSettings.city
+              ? { "@type": "City", name: siteSettings.city }
+              : undefined,
+          }),
           "areaServed": {
             "@type": "City",
-            "name": "الرياض"
+            "name": siteSettings.city || "الرياض"
           }
         },
         {
@@ -208,7 +204,7 @@ export default function ServiceDetail() {
     return () => {
       document.getElementById(`service-schema-${service.id}`)?.remove()
     }
-  }, [service, metaText, resolvedCompany, activeIntel, phoneCall])
+  }, [service, metaText, resolvedCompany, activeIntel, phoneCall, siteSettings])
 
   const waHref = `https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن خدمة ${service?.title || "الباقات التنظيف"}`)}`
 

@@ -12,6 +12,7 @@ import { resolveServiceTypeFromCleaningPackage, getCleaningPackageImage, ARABIC_
 import { siteUrl } from "@/lib/siteUrl"
 import { getPackageRouteSlug } from "@/lib/packageRoute"
 import { resolveContactNumbers, useSiteSettings } from "@/context/SiteSettingsContext"
+import { buildLocalBusinessSchema } from "@/lib/structuredData"
 
 /** Convert container name+size to a URL slug (mirrors the old site's pattern) */
 function toSlug(text: string): string {
@@ -60,7 +61,8 @@ export default function PackageDetail() {
   const { data: apiCleaningPackages } = useGetPackages()
   const [container, setCleaningPackage] = useState<CleaningPackage | null>(null)
   const { openModal } = useServiceRequest()
-  const { phoneCall, phoneWhatsapp, phones, companyName } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { phoneCall, phoneWhatsapp, phones, companyName } = siteSettings
 
   useEffect(() => {
     if (!apiCleaningPackages?.length) return
@@ -104,12 +106,11 @@ export default function PackageDetail() {
         "url": packageCanonical,
         "inLanguage": "ar",
         "serviceType": (container.category && ARABIC_CATEGORY_NAMES[container.category]) || "خدمات تنظيف",
-        "provider": {
-          "@type": "LocalBusiness",
-          "name": companyName || "خدمات التنظيف بالرياض",
-          ...(callNumber ? { "telephone": `+966${callNumber.replace(/[^\d]/g, "").replace(/^0/, "")}` } : {}),
-        },
-        "areaServed": { "@type": "City", "name": "الرياض" },
+         "provider": buildLocalBusinessSchema(siteSettings, {
+           areaServed: siteSettings.city
+             ? { "@type": "City", name: siteSettings.city }
+             : undefined,
+         }),
       },
       {
         "@context": "https://schema.org",
@@ -123,7 +124,7 @@ export default function PackageDetail() {
     ])
     document.head.appendChild(script)
     return () => document.getElementById(id)?.remove()
-  }, [container, packageCanonical, packageDescription, companyName, callNumber])
+  }, [container, packageCanonical, packageDescription, companyName, callNumber, siteSettings])
 
   if (!container && apiCleaningPackages) {
     // Not found — redirect to container listing

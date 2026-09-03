@@ -3,3 +3,4 @@
 - [Package route compatibility](package-route-compatibility.md) — sitemap and current package API use different slug sources; preserve a shared legacy alias layer when changing package routes.
 - [Hostinger generated-route cleanup](stale-generated-routes.md) — full builds must remove retired generated folders from both the frontend dist and the archive staging directory.
 - [Sitemap source parity](sitemap-source-parity.md) — Node build and PHP Hostinger sitemap generators must emit the same decoded public URL set.
+- [SSG heading ownership](ssg-heading-ownership.md) — prerendered pages need one page-owned H1; rich-text H1 tags must be converted as balanced opening/closing pairs.

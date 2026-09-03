@@ -6,6 +6,7 @@ import { useServiceRequest } from "@/context/ServiceRequestContext"
 import { replaceLegacyCompanyName, useSiteSettings } from "@/context/SiteSettingsContext"
 import { getSiteUrl, sitePath, siteUrl } from "@/lib/siteUrl"
 import { isSeoPageIndexable } from "@/lib/seoPagePolicy"
+import { normalizeRichTextHeadings } from "@/lib/seoContent"
 import {
   ArrowRight,
   CheckCircle2,
@@ -127,7 +128,8 @@ export default function SeoPage() {
   const rawSlug = params1?.slug || params2?.slug || params3?.slug || params4?.slug || ""
   const slug = decodeURIComponent(rawSlug)
   const { openModal } = useServiceRequest()
-  const { companyName, phoneCall, phoneWhatsapp, isLoaded } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded } = siteSettings
   const [page, setPage] = useState<SeoPageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -155,7 +157,7 @@ export default function SeoPage() {
           ...data,
           title: replaceLegacyCompanyName(data.title, companyName),
           excerpt: replaceLegacyCompanyName(data.excerpt, companyName),
-          content: replaceLegacyCompanyName(data.content, companyName),
+          content: normalizeRichTextHeadings(replaceLegacyCompanyName(data.content, companyName)),
           seoTitle: replaceLegacyCompanyName(data.seoTitle, companyName),
           seoDescription: replaceLegacyCompanyName(data.seoDescription, companyName),
           seoKeywords: replaceLegacyCompanyName(data.seoKeywords, companyName),
@@ -203,7 +205,7 @@ export default function SeoPage() {
             url: canonical,
             headline: title,
             inLanguage: "ar",
-            isPartOf: { "@type": "WebSite", name: companyName || "الشركة", url: getSiteUrl() },
+             isPartOf: { "@type": "WebSite", name: companyName || "الشركة", url: getSiteUrl(publicUrl) },
             about: { "@type": "Thing", name: resolvedData.targetKeyword || title },
             ...(image ? { image } : {}),
             datePublished: data.publishedAt || undefined,
@@ -213,7 +215,7 @@ export default function SeoPage() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "الرئيسية", item: getSiteUrl() },
+               { "@type": "ListItem", position: 1, name: "الرئيسية", item: getSiteUrl(publicUrl) },
               { "@type": "ListItem", position: 2, name: title, item: canonical },
             ],
           },
@@ -237,7 +239,7 @@ export default function SeoPage() {
       removeSeoArtifacts()
       document.getElementById("seo-page-canonical")?.remove()
     }
-  }, [slug, companyName, isLoaded])
+  }, [slug, companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded])
 
   if (loading) {
     return (

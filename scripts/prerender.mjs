@@ -199,6 +199,10 @@ function sanitizeHtml(html) {
     .replace(/السهم كلين\s+الماسة/g, siteCompanyName)
     .replace(/منصة\s+باقات التنظيف/g, siteCompanyName)
     .replace(/href="([^"]+)"/gi, (_, href) => `href="${normalizeLegacyServiceLinks(href)}"`)
+    // The generated page already owns its single primary H1. Rich-text
+    // content must use H2/H3 so crawlers do not see duplicate page titles.
+    .replace(/<h1(\s[^>]*)?>/gi, "<h2$1>")
+    .replace(/<\/h1>/gi, "</h2>")
     // تحويل روابط الصور النسبية إلى root-relative (تعمل مع أي دومين)
     .replace(/src="(?!https?:\/\/|\/\/)([^/""][^"]*?)"/g, (_, p) => `src="/${p.replace(/^\/+/, "")}"`);
   if (siteCompanyName !== "مؤسسة السهم كلين") {
@@ -429,6 +433,34 @@ function renderPage({ title, description, keywords = "", canonical, ogImage, ogT
 function publicUrl(path = "/") {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return SITE_URL ? `${SITE_URL}${normalized}` : normalized;
+}
+
+function buildLocalBusinessSchema(overrides = {}) {
+  const sameAs = [...socialLinks];
+  if (sitePhoneWhatsapp) sameAs.push(`https://wa.me/${toInternational(sitePhoneWhatsapp).replace("+", "")}`);
+  const telephone = sitePhones
+    .map(toInternational)
+    .filter((phone, index, list) => phone && list.indexOf(phone) === index);
+  return {
+    "@context": "https://schema.org",
+    "@type": ["LocalBusiness", "HousekeepingService"],
+    "@id": `${publicUrl("/")}#business`,
+    "name": overrides.name || siteCompanyName,
+    "url": overrides.url || publicUrl("/"),
+    "logo": absoluteImg(siteLogo),
+    "image": absoluteImg(settingMap.company_image?.trim() || siteLogo || SEO_DEFAULTS.image),
+    ...(siteDescription || overrides.description ? { description: overrides.description || siteDescription } : {}),
+    ...(telephone.length ? { telephone: telephone.length === 1 ? telephone[0] : telephone } : {}),
+    ...(settingMap.company_price_range?.trim() ? { priceRange: settingMap.company_price_range.trim() } : {}),
+    ...(settingMap.company_payment_methods?.trim() ? { paymentAccepted: settingMap.company_payment_methods.trim() } : {}),
+    "address": buildAddressSchema(),
+    ...(Number.isFinite(coordinates.latitude) && Number.isFinite(coordinates.longitude)
+      ? { geo: { "@type": "GeoCoordinates", latitude: coordinates.latitude, longitude: coordinates.longitude } }
+      : {}),
+    ...(settingMap.company_email?.trim() ? { email: settingMap.company_email.trim() } : {}),
+    "areaServed": overrides.areaServed || { "@type": "City", name: address.city || SEO_DEFAULTS.city },
+    ...(sameAs.length ? { sameAs: [...new Set(sameAs)] } : {}),
+  };
 }
 
 function dynamicHomeSchema() {
@@ -789,7 +821,7 @@ function generateFullHomepageStaticContent() {
 }
 
 function updateIndexSeo(html) {
-  const title = `شركة تنظيف بالرياض | ${siteCompanyName}`;
+  const title = `شركة تنظيف بالرياض للمنازل والفلل والمكاتب | ${siteCompanyName}`;
   const description = siteDescription;
   const logo = siteLogo ? absoluteImg(siteLogo) : publicUrl("/brand-icon.png");
   const replace = (source, pattern, value) => source.replace(pattern, value);
@@ -885,11 +917,7 @@ for (const post of posts) {
       "name": siteCompanyName,
       "url": SITE_URL
     },
-    "publisher": {
-      "@type": "Organization",
-      "name": siteCompanyName,
-      "logo": { "@type": "ImageObject", "url": absoluteImg(siteLogo) }
-    }
+    "publisher": buildLocalBusinessSchema()
   };
 
   const crumbs = [
@@ -949,11 +977,7 @@ console.log(`   ✅ ${posts.length} مقالة`);
     "description": blogDesc,
     "url": blogCanonical,
     "inLanguage": "ar",
-    "publisher": {
-      "@type": "Organization",
-      "name": siteCompanyName,
-      "logo": { "@type": "ImageObject", "url": absoluteImg(siteLogo) }
-    }
+    "publisher": buildLocalBusinessSchema()
   };
 
   const crumbs = [
@@ -1028,18 +1052,15 @@ for (const svc of services) {
     "description": desc,
     "url": canonical,
     "inLanguage": "ar",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": `${publicUrl("/")}#business`,
-      "name": siteCompanyName,
-      "image": absoluteImg(siteLogo),
-      "priceRange": settingMap.company_price_range?.trim() || SEO_DEFAULTS.priceRange,
-      "telephone": sitePhones.map(toInternational),
-      "address": buildAddressSchema(),
-      "url": SITE_URL || "/"
-    },
+    "provider": buildLocalBusinessSchema({
+      description: desc,
+      areaServed: [
+        { "@type": "City", "name": address.city || SEO_DEFAULTS.city },
+        { "@type": "Country", "name": "المملكة العربية السعودية" }
+      ],
+    }),
     "areaServed": [
-      { "@type": "City", "name": "الرياض" },
+      { "@type": "City", "name": address.city || SEO_DEFAULTS.city },
       { "@type": "Country", "name": "المملكة العربية السعودية" }
     ]
   };
@@ -1226,14 +1247,10 @@ for (const c of containers) {
     "inLanguage": "ar",
      "category": catArabic,
      "serviceType": catArabic,
-     "provider": {
-       "@type": "LocalBusiness",
-       "@id": `${publicUrl("/") }#business`,
-       "name": siteCompanyName,
-       "telephone": sitePhones.map(toInternational),
-       "address": buildAddressSchema()
-     },
-     "areaServed": { "@type": "City", "name": "الرياض" }
+     "provider": buildLocalBusinessSchema({
+       description: desc,
+       areaServed: { "@type": "City", "name": address.city || SEO_DEFAULTS.city },
+     })
   };
 
   const crumbs = [
@@ -2010,16 +2027,10 @@ for (const area of NEIGHBORHOODS) {
     "description": description,
     "url": canonical,
     "inLanguage": "ar",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": `${SITE_URL}/#business`,
-      "name": siteCompanyName,
-      "image": absoluteImg(siteLogo),
-      "priceRange": settingMap.company_price_range?.trim() || SEO_DEFAULTS.priceRange,
-      "telephone": toInternational(sitePhoneCall),
-      "address": buildAddressSchema(),
-      "url": SITE_URL,
-    },
+    "provider": buildLocalBusinessSchema({
+      description,
+      areaServed: { "@type": "Place", "name": `${location}، ${address.country === "SA" ? "المملكة العربية السعودية" : address.country}` },
+    }),
     "areaServed": { "@type": "Place", "name": `${location}، المملكة العربية السعودية` },
     "offers": [
       { "@type": "Offer", "name": "باقة تنظيف الشقق السكنية", "description": "طلب عرض سعر مجاني حسب عدد الغرف والمساحة والخدمات المختارة." },

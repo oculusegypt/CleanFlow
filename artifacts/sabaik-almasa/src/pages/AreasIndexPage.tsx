@@ -3,17 +3,18 @@ import { Link } from "wouter"
 import { MapPin, ArrowLeft, Phone, MessageCircle, Box } from "lucide-react"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
-import { getSiteUrl } from "@/lib/siteUrl"
+import { getSiteUrl, siteUrl } from "@/lib/siteUrl"
 import { AREAS, RIYADH_AREA_GROUPS, ARABIC_AREA_SLUGS } from "@/pages/NeighborhoodPage"
 import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function AreasIndexPage() {
-  const { companyName, phoneCall, phoneWhatsapp, isLoaded } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded } = siteSettings
   const resolvedCompany = companyName || "خدمات التنظيف"
 
   useEffect(() => {
     if (!isLoaded) return
-    const site = getSiteUrl()
+    const site = getSiteUrl(publicUrl)
     document.title = companyName ? `مناطق خدمات التنظيف في الرياض | ${companyName}` : "مناطق خدمات التنظيف في الرياض"
     const description = companyName ? `تعرف على مناطق وأحياء خدمة ${companyName} لتنظيف المنازل والفلل والمكاتب في شمال وجنوب وشرق وغرب الرياض.` : "تعرف على مناطق وأحياء خدمات تنظيف المنازل والفلل والمكاتب في الرياض."
     let meta = document.querySelector("meta[name='description']") as HTMLMetaElement | null
@@ -39,11 +40,11 @@ export default function AreasIndexPage() {
     schema.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "مناطق خدمات التنظيف في الرياض",
+      "name": `مناطق خدمات التنظيف في ${siteSettings.city || "الرياض"}`,
       "description": description,
-      "url": `${site}/areas`,
+      "url": siteUrl("/areas", publicUrl),
       "inLanguage": "ar",
-      "about": { "@type": "Service", "name": "خدمات تنظيف المنازل والمنشآت بالرياض" },
+      "about": { "@type": "Service", "name": `خدمات تنظيف المنازل والمنشآت في ${siteSettings.city || "الرياض"}` },
       "mainEntity": {
         "@type": "ItemList",
         "itemListElement": Object.entries(AREAS).map(([slug, area], index) => {
@@ -52,14 +53,14 @@ export default function AreasIndexPage() {
             "@type": "ListItem",
             "position": index + 1,
             "name": area.name,
-            "url": `${site}/areas/${encodeURIComponent(arSlug)}`,
+            "url": siteUrl(`/areas/${encodeURIComponent(arSlug)}`, publicUrl),
           }
         }),
       },
     })
     document.head.appendChild(schema)
     return () => document.getElementById(schemaId)?.remove()
-  }, [resolvedCompany, isLoaded])
+  }, [resolvedCompany, publicUrl, siteSettings.city, isLoaded])
 
   return (
     <div className="min-h-screen bg-background font-sans" dir="rtl">

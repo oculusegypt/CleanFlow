@@ -1,211 +1,9 @@
 import { useEffect, useState } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
-import { getSiteUrl } from "@/lib/siteUrl"
 import { useSiteSettings } from "@/context/SiteSettingsContext"
-import type { SocialLinks } from "@/context/SiteSettingsContext"
-
-const SEO_DEFAULTS = {
-  companyName: "شركة تنظيف بالرياض",
-  phone: "0554498403",
-  address: "طريق الملك فهد، حي الصحافة",
-  city: "الرياض",
-  region: "منطقة الرياض",
-  country: "SA",
-  postalCode: "13321",
-  priceRange: "$$",
-  image: "/brand-icon.png",
-} as const
-
-function injectLocalBusinessSchema({
-  companyName,
-  description,
-  logoUrl,
-  phones,
-  address,
-  city,
-  region,
-  country,
-  postalCode,
-  latitude,
-  longitude,
-  priceRange,
-  paymentMethods,
-  socialLinks,
-  publicUrl,
-}: {
-  companyName: string
-  description: string
-  logoUrl: string
-  phones: string[]
-  address: string
-  city: string
-  region: string
-  country: string
-  postalCode: string
-  latitude: string
-  longitude: string
-  priceRange: string
-  paymentMethods: string
-  socialLinks: SocialLinks
-  publicUrl: string
-}) {
-  if (typeof document === "undefined") return
-  let script = document.getElementById("local-business-schema") as HTMLScriptElement | null
-  if (!script) {
-    script = document.createElement("script")
-    script.id = "local-business-schema"
-    script.type = "application/ld+json"
-    document.head.appendChild(script)
-  }
-   const SITE_URL = getSiteUrl(publicUrl)
-  const toAbsolute = (url?: string) => {
-     if (!url) return `${SITE_URL}/brand-icon.png`
-    if (url.startsWith("http://") || url.startsWith("https://")) return url
-    return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`
-  }
-  const toInternational = (p: string) => {
-    const d = p.replace(/\D/g, "")
-    if (d.startsWith("00")) return `+${d.slice(2)}`
-    if (d.startsWith("0")) return `+966${d.slice(1)}`
-    if (d.startsWith("966")) return `+${d}`
-    return `+966${d}`
-  }
-  const sameAs: string[] = []
-  try {
-    if (socialLinks) {
-      Object.values(socialLinks).forEach((link) => {
-        if (typeof link === "string" && link.startsWith("http")) sameAs.push(link)
-      })
-    }
-  } catch {}
-  const schemaPhones = (phones && phones.length) ? phones : [SEO_DEFAULTS.phone]
-  const whatsapp = schemaPhones[0] ? `https://wa.me/${toInternational(schemaPhones[0]).replace("+", "")}` : ""
-  if (whatsapp) sameAs.push(whatsapp)
-  const addressData = {
-    "@type": "PostalAddress",
-    streetAddress: address || SEO_DEFAULTS.address,
-    addressLocality: city || SEO_DEFAULTS.city,
-    addressRegion: region || SEO_DEFAULTS.region,
-    addressCountry: country || SEO_DEFAULTS.country,
-    postalCode: postalCode || SEO_DEFAULTS.postalCode,
-  }
-   const resolvedCompanyName = companyName || SEO_DEFAULTS.companyName
-   const resolvedBrandName = resolvedCompanyName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
-  const resolvedDesc = description || `${companyName || SEO_DEFAULTS.companyName} لخدمات تنظيف المنازل والفلل والشقق والمكاتب والمنشآت بالرياض.`
-
-  script.textContent = JSON.stringify({
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": ["LocalBusiness", "CleaningService"],
-        "@id": `${SITE_URL}/#business`,
-        "name": resolvedCompanyName,
-        "alternateName": companyName ? [companyName, `خدمات تنظيف ${companyName}`, "شركة تنظيف بالرياض"] : ["شركة تنظيف بالرياض", "خدمات تنظيف بالرياض"],
-        "description": resolvedDesc,
-        "url": `${SITE_URL}/`,
-        "logo": {
-          "@type": "ImageObject",
-           "url": toAbsolute("/brand-icon.png"),
-           "width": "1254",
-           "height": "1254"
-        },
-        "image": {
-          "@type": "ImageObject",
-          "url": toAbsolute(SEO_DEFAULTS.image),
-          "width": "1200",
-          "height": "675"
-        },
-        "primaryImageOfPage": {
-          "@type": "ImageObject",
-          "url": toAbsolute(SEO_DEFAULTS.image),
-          "width": "1200",
-          "height": "675"
-        },
-        "telephone": schemaPhones.length === 1 ? toInternational(schemaPhones[0]) : schemaPhones.map(toInternational),
-        "priceRange": priceRange || SEO_DEFAULTS.priceRange,
-        "currenciesAccepted": "SAR",
-        "paymentAccepted": paymentMethods || "Cash, Credit Card, Bank Transfer, Mada",
-        "address": addressData,
-        "geo": {
-          "@type": "GeoCoordinates",
-          "latitude": latitude || "24.7937",
-          "longitude": longitude || "46.6371"
-        },
-        "areaServed": [
-          { "@type": "City", "name": "الرياض", "sameAs": "https://www.wikidata.org/wiki/Q3692" },
-          { "@type": "Country", "name": "المملكة العربية السعودية" }
-        ],
-        "openingHours": "Mo-Su 00:00-23:59",
-        "hasOfferCatalog": {
-          "@type": "OfferCatalog",
-          "name": companyName ? `باقات تنظيف ${companyName} بالرياض` : "باقات التنظيف بالرياض",
-          "itemListElement": [
-            {
-              "@type": "Offer",
-              "name": "باقة تنظيف الشقق السكنية",
-              "priceCurrency": "SAR",
-              "availability": "https://schema.org/InStock",
-              "itemOffered": {
-                "@type": "Service",
-                "name": "تنظيف الشقق والمنازل",
-                "description": "تنظيف عميق للمنازل والشقق مع تنسيق الموعد"
-              }
-            },
-            {
-              "@type": "Offer",
-              "name": "باقة تنظيف الفلل والقصور",
-              "priceCurrency": "SAR",
-              "availability": "https://schema.org/InStock",
-              "itemOffered": {
-                "@type": "Service",
-                "name": "تنظيف الفلل والقصور",
-                "description": "تنظيف شامل للأدوار والمجالس والمرافق"
-              }
-            },
-            {
-              "@type": "Offer",
-              "name": "باقة غسيل المجالس بالبخار",
-              "priceCurrency": "SAR",
-              "availability": "https://schema.org/InStock",
-              "itemOffered": {
-                "@type": "Service",
-                "name": "غسيل المجالس والكنب",
-                "description": "غسيل وتعقيم بالبخار للمجالس والكنب والسجاد"
-              }
-            },
-            {
-              "@type": "Offer",
-              "name": "باقة تنظيف المكيفات",
-              "priceCurrency": "SAR",
-              "availability": "https://schema.org/InStock",
-              "itemOffered": {
-                "@type": "Service",
-                "name": "تنظيف وغسيل المكيفات",
-                "description": "تنظيف متخصص لمكيفات المنازل والمنشآت"
-              }
-            }
-          ]
-        },
-        "sameAs": sameAs
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${SITE_URL}/#website`,
-        "url": `${SITE_URL}/`,
-         "name": resolvedBrandName,
-         "alternateName": [resolvedCompanyName, resolvedBrandName],
-        "inLanguage": "ar",
-        "publisher": { "@id": `${SITE_URL}/#business` },
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": `${SITE_URL}/blog?q={search_term_string}`,
-          "query-input": "required name=search_term_string"
-        }
-      }
-    ]
-  })
-}
+import { buildHomepageTitle, buildLocalBusinessSchema } from "@/lib/structuredData"
+import { getSiteUrl } from "@/lib/siteUrl"
 
 import { HeroSlider } from "@/components/home/HeroSlider"
 import { StatsBar } from "@/components/home/StatsBar"
@@ -367,29 +165,33 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoaded) return
-     const brandName = (companyName || "السهم كلين").replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
-     document.title = companyName
-       ? `${brandName} | خدمات تنظيف احترافية بالرياض`
-      : "خدمات تنظيف المنازل والفلل والمكاتب بالرياض | حجز وتنسيق سريع"
-    injectLocalBusinessSchema({
-      companyName,
-      description,
-      logoUrl,
-      phones,
-      address: siteSettings.address,
-      city: siteSettings.city,
-      region: siteSettings.region,
-      country: siteSettings.country,
-      postalCode: siteSettings.postalCode,
-      latitude: siteSettings.latitude,
-      longitude: siteSettings.longitude,
-      priceRange: siteSettings.priceRange,
-      paymentMethods: siteSettings.paymentMethods,
-      socialLinks: siteSettings.socialLinks,
-       publicUrl,
+    document.title = buildHomepageTitle(companyName)
+    const id = "local-business-schema"
+    document.getElementById(id)?.remove()
+    const script = document.createElement("script")
+    script.id = id
+    script.type = "application/ld+json"
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        buildLocalBusinessSchema(siteSettings, {
+          areaServed: siteSettings.city
+            ? { "@type": "City", name: siteSettings.city }
+            : undefined,
+        }),
+        {
+          "@type": "WebSite",
+          "@id": `${getSiteUrl(publicUrl)}/#website`,
+          "url": `${getSiteUrl(publicUrl)}/`,
+          "name": companyName,
+          "inLanguage": "ar",
+          "publisher": { "@id": `${getSiteUrl(publicUrl)}/#business` },
+        },
+      ],
     })
-    return () => { document.getElementById("local-business-schema")?.remove() }
-  }, [companyName, description, logoUrl, phones, phoneWhatsapp, publicUrl, isLoaded])
+    document.head.appendChild(script)
+    return () => document.getElementById(id)?.remove()
+  }, [companyName, description, logoUrl, phones, phoneWhatsapp, publicUrl, siteSettings, isLoaded])
 
   useEffect(() => {
     fetch(`${API_BASE}/api/settings`)

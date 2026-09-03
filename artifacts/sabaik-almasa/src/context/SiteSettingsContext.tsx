@@ -117,7 +117,7 @@ export interface SocialLinks {
   youtube: string
 }
 
-interface SiteSettings {
+export interface SiteSettings {
   logoUrl: string
   companyName: string
   description: string

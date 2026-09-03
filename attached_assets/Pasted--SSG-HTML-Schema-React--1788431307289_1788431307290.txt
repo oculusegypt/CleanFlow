@@ -1,0 +1,87 @@
+
+راجعت مولّد الـSSG الذي يكتب HTML وSchema قبل وصول React، وهو منفصل عن الواجهة؛ لذلك سأوحّد مخطط النشاط فيه أيضًا وأمنع H1 داخل المحتوى المحرر من الظهور كعنوان ثانٍ. هذه الخطوة ضرورية حتى يطابق ملف Hostinger ما يراه Google في المصدر الأولي.
+
+
+
+Show less
+Inspecting patch issues
+
+Inspecting patch issues
+Inspecting patch issues
+
+I'm dealing with a patch that failed due to a possible line mismatch related to let sanitized details. I think I need to focus on getting smaller patches that are exact. The system is indicating that I should continue. I’ll need to inspect the specifics around the sanitization part closely to figure out what went wrong. Let's take a closer look at that to resolve the issue effectively!
+
+
+Opened prerender.mjs
+
+Edited prerender.mjs
+
+Edited prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+Continuing with the update
+
+Continuing with the update
+Continuing with the update
+
+I’m focusing on continuing my work by updating specific patches. I want to ignore the user's auto reminder for this task. It’s important to note that the file line numbers have shifted, so I need to patch the exact blocks accordingly. My first step is to update the index SEO title, followed by the article publisher, blog publisher, service, package, and area. I’ll also need to read the blog list around 990 and check service exactly at 1055.
+
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Opened prerender.mjs
+
+Edited prerender.mjs
+
+Edited prerender.mjs
+
+Edited prerender.mjs
+
+Edited prerender.mjs
+
+Edited prerender.mjs
+
+Searched for "publisher|provider|<h1\…"
+
+Ran scripts/prerender.mjs
+
+Ran a Node.js script
+
+Viewed code changes
+Considering next steps
+
+Considering next steps
+Considering next steps
+
+I need to keep moving with the current task. I'm thinking about whether I should refactor dynamicHome into a helper function. If I run node --check and see no output, that means everything is valid, which is good. However, I should inspect the diff first to ensure there wasn’t an accidental wrong publisher replacement. I’ll also need to use rg -n -C with fixed string commands to catch anything I might have overlooked.
+
+
+Searched for "publisher|provider|شركة…"
+
+Searched for "telephone|address|geo|a…"
+
+Viewed code changes
+Inspecting schema data
+
+Inspecting schema data
+Inspecting schema data
+
+I need to keep going. The search indicates that if pricing is set to false, it won't have any effect. Other local businesses seem to have prices around $1,800 to $1,858, which probably means I need to check their contact pages. Perhaps I should consider refactoring everything? The user has asked for all schema data to be dynamic, so I definitely need to take a closer look at lines 1760-1870 for any potential updates!
+
+
+Opened prerender.mjs
+
+Worked for 5 minutes
+You've reached your monthly free quota limit. It will reset on September 21, 2026.

@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { useLocation } from "wouter"
 import { getSiteUrl, sitePath, siteUrl } from "@/lib/siteUrl"
 import { useSiteSettings } from "@/context/SiteSettingsContext"
+import { buildHomepageTitle, buildLocalBusinessSchema } from "@/lib/structuredData"
 
 function upsertMeta(attribute: "name" | "property", key: string, value: string) {
   let tag = document.head.querySelector(`meta[${attribute}="${key}"]`) as HTMLMetaElement | null
@@ -15,14 +16,35 @@ function upsertMeta(attribute: "name" | "property", key: string, value: string) 
 
 export function SiteSEO() {
   const [location] = useLocation()
-  const { companyName, description, phoneCall, address, city, region, country, priceRange, socialLinks, publicUrl, isLoaded } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const {
+    companyName,
+    description,
+    logoUrl,
+    phones,
+    phoneCall,
+    phoneWhatsapp,
+    address,
+    city,
+    region,
+    country,
+    postalCode,
+    latitude,
+    longitude,
+    priceRange,
+    paymentMethods,
+    socialLinks,
+    email,
+    publicUrl,
+    isLoaded,
+  } = siteSettings
 
   useEffect(() => {
     if (!isLoaded) return
     const isAdmin = location.startsWith("/admin")
     const legalName = companyName || "مؤسسة السهم كلين"
     const siteName = legalName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
-    const defaultTitle = `شركة تنظيف بالرياض | ${legalName}`
+    const defaultTitle = buildHomepageTitle(companyName)
     const defaultDescription = description || "خدمات تنظيف المنازل والفلل والشقق والمكاتب في الرياض، مع تنظيف ما بعد البناء وجلي الرخام وغسيل المكيفات."
     const siteOrigin = getSiteUrl(publicUrl)
     const canonicalPath = sitePath(location.split(/[?#]/)[0] || "/", publicUrl).replace(/\/+$/, "") || "/"
@@ -69,27 +91,10 @@ export function SiteSEO() {
     schema.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@graph": [
-        {
-          "@type": "LocalBusiness",
-          "@id": `${siteOrigin}/#business`,
-          name: legalName,
-          alternateName: [siteName, legalName],
-          url: siteUrl("/", publicUrl),
-          image,
-          logo: image,
+        buildLocalBusinessSchema(siteSettings, {
           description: defaultDescription,
-          ...(phoneCall ? { telephone: phoneCall } : {}),
-          ...(priceRange ? { priceRange } : {}),
-          areaServed: { "@type": "City", name: city || "الرياض" },
-          ...(address || city || region || country ? { address: {
-            "@type": "PostalAddress",
-            ...(address ? { streetAddress: address } : {}),
-            ...(city ? { addressLocality: city } : { addressLocality: "الرياض" }),
-            ...(region ? { addressRegion: region } : {}),
-            ...(country ? { addressCountry: country } : { addressCountry: "SA" }),
-          } } : {}),
-          sameAs: Object.values(socialLinks).filter(Boolean),
-        },
+          areaServed: city ? { "@type": "City", name: city } : undefined,
+        }),
         {
           "@type": "WebSite",
           "@id": `${siteOrigin}/#website`,
@@ -104,13 +109,21 @@ export function SiteSEO() {
     location,
     companyName,
     description,
+    logoUrl,
+    phones,
     phoneCall,
+    phoneWhatsapp,
     address,
     city,
     region,
     country,
+    postalCode,
+    latitude,
+    longitude,
     priceRange,
+    paymentMethods,
     socialLinks,
+    email,
     publicUrl,
     isLoaded,
   ])

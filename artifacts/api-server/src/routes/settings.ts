@@ -35,12 +35,12 @@ const DEFAULTS: Record<string, string> = {
   company_map_embed: "",
   site_desc: "",
   site_public_url: "",
-  social_facebook: "",
-  social_x: "",
-  social_instagram: "",
-  social_tiktok: "",
-  social_snapchat: "",
-  social_youtube: "",
+  social_facebook: "https://www.facebook.com/Aiservx",
+  social_x: "https://x.com/Aiservx",
+  social_instagram: "https://www.instagram.com/Aiservx/",
+  social_tiktok: "https://www.tiktok.com/@Aiservx",
+  social_snapchat: "https://www.snapchat.com/add/Aiservx",
+  social_youtube: "https://www.youtube.com/@Aiservx",
   homepage_content: "{}",
   // Stats bar
   stats_items: JSON.stringify([]),
@@ -96,6 +96,22 @@ export async function setSetting(key: string, value: string): Promise<void> {
   }
 }
 
+const SOCIAL_KEYS = [
+  "social_facebook",
+  "social_x",
+  "social_instagram",
+  "social_tiktok",
+  "social_snapchat",
+  "social_youtube",
+];
+
+function applySocialDefaults(map: Record<string, string>): Record<string, string> {
+  for (const key of SOCIAL_KEYS) {
+    if (!map[key]?.trim()) map[key] = DEFAULTS[key];
+  }
+  return map;
+}
+
 // Keys that must never be exposed in the public /api/settings endpoint
 const SENSITIVE_KEYS = new Set([
   "ai_gemini_key",
@@ -128,9 +144,9 @@ router.get("/settings", async (_req, res) => {
     for (const row of rows) {
       map[row.key] = row.value;
     }
-    return res.json(redactSensitive(map));
+    return res.json(redactSensitive(applySocialDefaults(map)));
   } catch {
-    return res.json(redactSensitive(DEFAULTS));
+    return res.json(redactSensitive(applySocialDefaults({ ...DEFAULTS })));
   }
 });
 
@@ -140,9 +156,9 @@ router.get("/admin/settings", requireAdmin, requireSectionPermission("settings")
     const rows = await db.select().from(siteSettingsTable);
     const map: Record<string, string> = { ...DEFAULTS };
     for (const row of rows) map[row.key] = row.value;
-    return res.json(map);
+    return res.json(applySocialDefaults(map));
   } catch {
-    return res.json(DEFAULTS);
+    return res.json(applySocialDefaults({ ...DEFAULTS }));
   }
 });
 
@@ -239,7 +255,7 @@ router.put("/admin/settings", requireAdmin, requireSectionPermission("settings")
     const rows = await db.select().from(siteSettingsTable);
     const map: Record<string, string> = { ...DEFAULTS };
     for (const row of rows) map[row.key] = row.value;
-    return res.json(map);
+    return res.json(applySocialDefaults(map));
   } catch {
     return res.status(500).json({ error: "فشل في تحديث الإعدادات" });
   }

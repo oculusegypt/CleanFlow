@@ -21,6 +21,7 @@ import {
 import { useServiceRequest } from "@/context/ServiceRequestContext"
 import { getSiteUrl } from "@/lib/siteUrl"
 import { replaceLegacyCompanyName, useSiteSettings } from "@/context/SiteSettingsContext"
+import { buildLocalBusinessSchema } from "@/lib/structuredData"
 
 export interface AreaData {
   name: string
@@ -552,7 +553,8 @@ export default function NeighborhoodPage() {
   const area = resolved?.area ? sanitizeAreaData(resolved.area) : undefined
   const activeSlug = resolved?.slug || rawSlug
   const { openModal } = useServiceRequest()
-  const { companyName, phoneCall, phoneWhatsapp, logoUrl, priceRange, address, city, region, country, publicUrl } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { companyName, phoneCall, phoneWhatsapp, publicUrl } = siteSettings
   const currentCompany = companyName || ""
 
   const areaTitle = area ? replaceLegacyCompanyName(area.title, currentCompany) : ""
@@ -574,23 +576,11 @@ export default function NeighborhoodPage() {
     script.type = "application/ld+json"
     script.textContent = JSON.stringify([
       {
-        "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "@id": `${SITE_URL}/#business`,
-        "name": `${currentCompany} — فرع ${area.name}`,
-        "description": areaDescription,
-        "url": `${SITE_URL}/areas/${encodeURIComponent(activeSlug)}`,
-        "image": logoUrl || `${SITE_URL}/images/hero-debris-container.jpg`,
-        "priceRange": priceRange || "$$",
-        "telephone": `+966${(phoneCall || "0554498403").replace(/^0/, "")}`,
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": address || "طريق الملك فهد",
-          "addressLocality": city || "الرياض",
-          "addressRegion": region || "منطقة الرياض",
-          "addressCountry": country || "SA",
-        },
-        "areaServed": { "@type": "Place", "name": `${area.name}، الرياض` },
+        ...buildLocalBusinessSchema(siteSettings, {
+          description: areaDescription,
+          url: `${SITE_URL}/areas/${encodeURIComponent(activeSlug)}`,
+          areaServed: { "@type": "Place", "name": `${area.name}${siteSettings.city ? `، ${siteSettings.city}` : ""}` },
+        }),
       },
       {
         "@context": "https://schema.org",
@@ -616,7 +606,7 @@ export default function NeighborhoodPage() {
     ])
     document.head.appendChild(script)
     return () => { document.getElementById(id)?.remove() }
-  }, [activeSlug, area, areaTitle, areaDescription, currentCompany, phoneCall, logoUrl, priceRange, address, city, region, country, publicUrl])
+  }, [activeSlug, area, areaTitle, areaDescription, currentCompany, phoneCall, publicUrl, siteSettings])
 
   if (!area) {
     return (

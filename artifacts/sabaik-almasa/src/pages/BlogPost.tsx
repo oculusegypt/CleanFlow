@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useServiceRequest } from "@/context/ServiceRequestContext"
 import { getSiteUrl, sitePath, siteUrl } from "@/lib/siteUrl"
 import { replaceLegacyCompanyName, useSiteSettings } from "@/context/SiteSettingsContext"
+import { buildLocalBusinessSchema } from "@/lib/structuredData"
+import { normalizeRichTextHeadings } from "@/lib/seoContent"
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
 interface Post {
@@ -224,7 +226,8 @@ export default function BlogPost() {
   const slug = decodeURIComponent(rawSlug)
   const { toast } = useToast()
   const { openModal } = useServiceRequest()
-  const { companyName, phoneCall, phoneWhatsapp, isLoaded } = useSiteSettings()
+  const siteSettings = useSiteSettings()
+  const { companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded } = siteSettings
 
   const [post, setPost]     = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -258,7 +261,7 @@ export default function BlogPost() {
         const resolvedTitle = replaceLegacyCompanyName(`${title} | مدونة ${companyName || "الشركة"}`, companyName)
         const resolvedDescription = replaceLegacyCompanyName(desc, companyName)
         const resolvedAuthor = replaceLegacyCompanyName(d.author || companyName || "الشركة", companyName)
-        const resolvedContent = replaceLegacyCompanyName(d.content || "", companyName)
+        const resolvedContent = normalizeRichTextHeadings(replaceLegacyCompanyName(d.content || "", companyName))
         document.title = resolvedTitle
 
         setMeta("description",        resolvedDescription)
@@ -307,13 +310,12 @@ export default function BlogPost() {
             "datePublished": d.publishedAt,
             "dateModified": d.updatedAt || d.publishedAt,
             "author": { "@type": "Organization", "name": resolvedAuthor, "url": getSiteUrl() },
-            "publisher": {
-              "@type": "Organization",
-              "name": companyName,
-              "logo": { "@type": "ImageObject", "url": siteUrl("/brand-icon.png") },
-              "telephone": phoneCall ? `+966${phoneCall.replace(/^0/, "")}` : undefined,
-              "areaServed": "الرياض",
-            },
+            "publisher": buildLocalBusinessSchema(siteSettings, {
+              description: resolvedDescription,
+              areaServed: siteSettings.city
+                ? { "@type": "City", name: siteSettings.city }
+                : undefined,
+            }),
             "mainEntityOfPage": { "@type": "WebPage", "@id": canonical },
             "url": canonical,
             "articleSection": d.category,
@@ -353,7 +355,7 @@ export default function BlogPost() {
       const el = document.getElementById("blog-post-schema")
       if (el) el.remove()
     }
-  }, [slug, companyName, isLoaded])
+  }, [slug, companyName, phoneCall, phoneWhatsapp, publicUrl, siteSettings, isLoaded])
 
   function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -393,7 +395,7 @@ export default function BlogPost() {
     ...post,
     title: replaceLegacyCompanyName(post.title, companyName),
     excerpt: replaceLegacyCompanyName(post.excerpt, companyName),
-    content: replaceLegacyCompanyName(post.content, companyName),
+    content: normalizeRichTextHeadings(replaceLegacyCompanyName(post.content, companyName)),
     author: replaceLegacyCompanyName(post.author, companyName),
   }
   const tags = getTags(post.tags).map(tag => replaceLegacyCompanyName(tag, companyName))

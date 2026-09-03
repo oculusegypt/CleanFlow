@@ -16,7 +16,7 @@ const updates = [
   { key: "company_name", value: "مؤسسة السهم كلين" },
   { key: "company_logo", value: "/brand-icon.png" },
   { key: "site_public_url", value: "https://alsahmm.com" },
-  { key: "seo_meta_title", value: "شركة تنظيف بالرياض | مؤسسة السهم كلين" },
+  { key: "seo_meta_title", value: "شركة تنظيف بالرياض للمنازل والفلل والمكاتب | مؤسسة السهم كلين" },
   { key: "seo_meta_description", value: "مؤسسة السهم كلين لخدمات التنظيف بالرياض: تنظيف المنازل والفلل والشقق والمكاتب، والتنظيف بعد البناء، وغسيل المجالس والسجاد بالبخار، وجلي الرخام، وتنظيف الخزانات والمكيفات بأعلى معايير الجودة." },
   { key: "seo_meta_keywords", value: "شركة تنظيف بالرياض, شركة تنظيف منازل بالرياض, شركة تنظيف فلل بالرياض, تنظيف شقق بالرياض, تنظيف بعد البناء بالرياض, غسيل مجالس بالبخار بالرياض, جلي رخام بالرياض, تنظيف خزانات بالرياض, تنظيف مكيفات بالرياض, مؤسسة السهم كلين" },
   { key: "company_city", value: "الرياض" },
@@ -29,6 +29,12 @@ const updates = [
   { key: "company_email", value: "info@alsahmm.com" },
   { key: "company_price_range", value: "$$" },
   { key: "company_payment_methods", value: "نقدي، مدى، فيزا، ماستركارد، تحويل بنكي" },
+  { key: "social_facebook", value: "https://www.facebook.com/Aiservx" },
+  { key: "social_x", value: "https://x.com/Aiservx" },
+  { key: "social_instagram", value: "https://www.instagram.com/Aiservx/" },
+  { key: "social_tiktok", value: "https://www.tiktok.com/@Aiservx" },
+  { key: "social_snapchat", value: "https://www.snapchat.com/add/Aiservx" },
+  { key: "social_youtube", value: "https://www.youtube.com/@Aiservx" },
   { key: "vapid_subject", value: "mailto:info@alsahmm.com" }
 ];
 
