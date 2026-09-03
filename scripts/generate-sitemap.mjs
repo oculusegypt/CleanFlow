@@ -55,6 +55,30 @@ const staticPages = [
   ["/why-us/accumulated-experience", "0.8", "monthly"],
   ["/blog", "0.9", "daily"],
 ];
+
+const LEGACY_PACKAGE_ROUTE_SLUGS = {
+  1: "tanzeef-shaqaq",
+  2: "tanzeef-filal",
+  3: "tanzeef-qosoor",
+  4: "tanzeef-qabl-alnaql",
+  5: "gaseel-majalis-bukhar",
+  6: "jaly-rakham",
+  7: "tanzeef-khazanat",
+  8: "gaseel-mokeyafat",
+  9: "mokafahat-hasharat",
+  10: "tanzeef-bad-albenaa",
+  11: "tanzeef-wajahat",
+  12: "tanzeef-masajid",
+  13: "shahadat-salama",
+  14: "tarkeeb-anthimat-wiqaya",
+  15: "taqreer-fanni-fawri",
+  16: "taqreer-fanni-ghayr-fawri",
+  17: "aqd-siyana-difaa-madani",
+};
+
+const getPackageRouteSlug = (container) =>
+  LEGACY_PACKAGE_ROUTE_SLUGS[container.id] || container.slug || "";
+
 const staticImages = {
   "/": ["/brand-icon.png", "/images/logo.png"],
   "/about": ["/images/service-majlis.jpg"],
@@ -69,7 +93,7 @@ const services = db.prepare(`
 `).all();
 
 const containers = db.prepare(`
-  SELECT name AS title, seo_slug AS slug, images
+  SELECT id, name AS title, seo_slug AS slug, images
   FROM containers
   WHERE is_active = 1 AND seo_enabled = 1 AND seo_slug IS NOT NULL AND seo_slug != ''
   ORDER BY "order" ASC
@@ -143,7 +167,7 @@ for (const service of services) {
 
 for (const container of containers) {
   addEntry({
-    path: `/cleaning-packages/${encodeURIComponent(container.slug)}`,
+    path: `/cleaning-packages/${encodeURIComponent(getPackageRouteSlug(container))}`,
     priority: "0.90",
     changefreq: "weekly",
     title: container.title,

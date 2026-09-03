@@ -818,20 +818,26 @@ try {
             'central-riyadh', 'al-olaya', 'al-sulaimaniya', 'al-malaz', 'al-murabba', 'al-batha', 'al-wizarat', 'al-futah'
         ];
 
+        // Keep this list identical to scripts/generate-sitemap.mjs. Legacy
+        // landing pages remain reachable through redirects, but must not be
+        // advertised as competing canonical URLs.
         $staticPages = [
-            ['path' => '', 'priority' => '1.0', 'freq' => 'weekly'],
+            ['path' => '/', 'priority' => '1.0', 'freq' => 'daily'],
             ['path' => '/about', 'priority' => '0.9', 'freq' => 'monthly'],
             ['path' => '/services', 'priority' => '0.95', 'freq' => 'weekly'],
             ['path' => '/cleaning-packages', 'priority' => '0.95', 'freq' => 'weekly'],
-            ['path' => '/offers', 'priority' => '0.9', 'freq' => 'weekly'],
-            ['path' => '/اتصل-الآن', 'priority' => '0.8', 'freq' => 'monthly'],
             ['path' => '/contact', 'priority' => '0.85', 'freq' => 'monthly'],
             ['path' => '/partners', 'priority' => '0.75', 'freq' => 'monthly'],
-            ['path' => '/areas', 'priority' => '0.85', 'freq' => 'monthly'],
-            ['path' => '/why-us/leadership', 'priority' => '0.75', 'freq' => 'monthly'],
-            ['path' => '/why-us/what-we', 'priority' => '0.75', 'freq' => 'monthly'],
-            ['path' => '/why-us/commitment', 'priority' => '0.75', 'freq' => 'monthly'],
-            ['path' => '/why-us/accumulated-experience', 'priority' => '0.7', 'freq' => 'monthly'],
+            ['path' => '/areas', 'priority' => '0.9', 'freq' => 'weekly'],
+            ['path' => '/faq', 'priority' => '0.85', 'freq' => 'monthly'],
+            ['path' => '/terms', 'priority' => '0.6', 'freq' => 'monthly'],
+            ['path' => '/privacy', 'priority' => '0.6', 'freq' => 'monthly'],
+            ['path' => '/chat', 'priority' => '0.7', 'freq' => 'monthly'],
+            ['path' => '/why-us/leadership', 'priority' => '0.8', 'freq' => 'monthly'],
+            ['path' => '/why-us/what-we', 'priority' => '0.8', 'freq' => 'monthly'],
+            ['path' => '/why-us/commitment', 'priority' => '0.8', 'freq' => 'monthly'],
+            ['path' => '/why-us/accumulated-experience', 'priority' => '0.8', 'freq' => 'monthly'],
+            ['path' => '/blog', 'priority' => '0.9', 'freq' => 'daily'],
         ];
 
         $lines = [
@@ -851,6 +857,7 @@ try {
             $lines[] = '    <lastmod>' . $today . '</lastmod>';
             $lines[] = '    <changefreq>' . $sp['freq'] . '</changefreq>';
             $lines[] = '    <priority>' . $sp['priority'] . '</priority>';
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
             $staticImages = $sp['path'] === '/'
                 ? json_encode(['/brand-icon.png', '/images/logo.png'])
                 : ($sp['path'] === '/about'
@@ -870,21 +877,23 @@ try {
             $lines[] = '    <lastmod>' . $today . '</lastmod>';
             $lines[] = '    <changefreq>monthly</changefreq>';
             $lines[] = '    <priority>0.8</priority>';
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
             $lines[] = '  </url>';
         }
 
         // Services
-        $servicesStmt = $pdo->query("SELECT seo_slug, seo_title, title, images FROM services WHERE is_active = 1 AND seo_enabled = 1");
+        $servicesStmt = $pdo->query('SELECT seo_slug, seo_title, title, images FROM services WHERE is_active = 1 AND seo_enabled = 1 AND seo_slug IS NOT NULL AND seo_slug <> \'\' ORDER BY "order" ASC');
         $services = $servicesStmt->fetchAll();
         foreach ($services as $srv) {
             $slug = $srv['seo_slug'] ?: '';
             if (!$slug) continue;
-            $u = $baseUrl . '/services/' . $slug;
+            $u = $baseUrl . '/services/' . rawurlencode($slug);
             $lines[] = '  <url>';
             $lines[] = '    <loc>' . htmlspecialchars($u, ENT_XML1) . '</loc>';
             $lines[] = '    <lastmod>' . $today . '</lastmod>';
             $lines[] = '    <changefreq>weekly</changefreq>';
             $lines[] = '    <priority>0.85</priority>';
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
             $appendImages($lines, $srv['images'] ?? '[]', (string)($srv['seo_title'] ?: $srv['title']));
             $lines[] = '  </url>';
         }
@@ -892,7 +901,10 @@ try {
         // Packages
         $pkgCount = 0;
         try {
-            $pkgStmt = $pdo->query("SELECT id, seo_slug, name, images, image_url FROM packages WHERE is_active = 1 AND seo_enabled = 1");
+            // The public package API and the Node sitemap both use containers.
+            // The older packages table is an editorial compatibility table and
+            // can have rows that are not public package pages.
+            $pkgStmt = $pdo->query('SELECT id, seo_slug, name, images FROM containers WHERE is_active = 1 AND seo_enabled = 1 AND seo_slug IS NOT NULL AND seo_slug <> \'\' ORDER BY "order" ASC');
             $pkgs = $pkgStmt->fetchAll();
             $legacyPackageRouteSlugs = [
                 1 => 'tanzeef-shaqaq',
@@ -916,56 +928,49 @@ try {
             foreach ($pkgs as $pkg) {
                 $slug = $legacyPackageRouteSlugs[(int)($pkg['id'] ?? 0)] ?? ($pkg['seo_slug'] ?: '');
                 if (!$slug) continue;
-                $u = $baseUrl . '/cleaning-packages/' . $slug;
+                $u = $baseUrl . '/cleaning-packages/' . rawurlencode($slug);
                 $lines[] = '  <url>';
                 $lines[] = '    <loc>' . htmlspecialchars($u, ENT_XML1) . '</loc>';
                 $lines[] = '    <lastmod>' . $today . '</lastmod>';
                 $lines[] = '    <changefreq>weekly</changefreq>';
                 $lines[] = '    <priority>0.85</priority>';
-                $packageImages = !empty($pkg['images'])
-                    ? $pkg['images']
-                    : json_encode(array_filter([(string)($pkg['image_url'] ?? ''), '/images/service-apartments.jpg']));
-                $appendImages($lines, $packageImages, (string)$pkg['name']);
+                $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
+                $appendImages($lines, $pkg['images'] ?? '[]', (string)$pkg['name']);
                 $lines[] = '  </url>';
                 $pkgCount++;
             }
         } catch (\Exception $e) {}
 
         // Blog
-        $lines[] = '  <url>';
-        $lines[] = '    <loc>' . htmlspecialchars($baseUrl . '/blog', ENT_XML1) . '</loc>';
-        $lines[] = '    <lastmod>' . $today . '</lastmod>';
-        $lines[] = '    <changefreq>weekly</changefreq>';
-        $lines[] = '    <priority>0.8</priority>';
-        $lines[] = '  </url>';
-
-        $postsStmt = $pdo->query("SELECT slug, title, published_at, cover_image, og_image FROM posts WHERE status = 'published' AND is_active = 1");
+        $postsStmt = $pdo->query("SELECT slug, title, published_at, updated_at, cover_image FROM posts WHERE status = 'published' AND is_active = 1 AND slug IS NOT NULL AND slug <> '' ORDER BY published_at DESC");
         $posts = $postsStmt->fetchAll();
         foreach ($posts as $post) {
             $slug = $post['slug'] ?: '';
             if (!$slug) continue;
-            $u = $baseUrl . '/blog/' . $slug;
+            $u = $baseUrl . '/blog/' . rawurlencode($slug);
             $lines[] = '  <url>';
             $lines[] = '    <loc>' . htmlspecialchars($u, ENT_XML1) . '</loc>';
-            $lines[] = '    <lastmod>' . substr((string)($post['published_at'] ?: $today), 0, 10) . '</lastmod>';
+            $lines[] = '    <lastmod>' . substr((string)($post['updated_at'] ?: $post['published_at'] ?: $today), 0, 10) . '</lastmod>';
             $lines[] = '    <changefreq>monthly</changefreq>';
             $lines[] = '    <priority>0.75</priority>';
-            $appendImages($lines, json_encode(array_filter([(string)($post['og_image'] ?? ''), (string)($post['cover_image'] ?? '')])), (string)$post['title']);
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
+            $appendImages($lines, json_encode(array_filter([(string)($post['cover_image'] ?? '')])), (string)$post['title']);
             $lines[] = '  </url>';
         }
 
         // SEO Pages
-        $pagesStmt = $pdo->query("SELECT slug, seo_slug, title, target_keyword, content, published_at, cover_image, og_image FROM seo_pages WHERE status = 'published' AND is_active = 1 AND trim(target_keyword) <> ''");
+        $pagesStmt = $pdo->query("SELECT slug, title, target_keyword, content, published_at, updated_at, cover_image, og_image FROM seo_pages WHERE status = 'published' AND is_active = 1 AND slug IS NOT NULL AND slug <> '' AND trim(target_keyword) <> '' ORDER BY published_at DESC");
         $seoPages = array_values(array_filter($pagesStmt->fetchAll(), $isIndexableSeoPage));
         foreach ($seoPages as $sp) {
-            $slug = $sp['slug'] ?: $sp['seo_slug'] ?: '';
+            $slug = $sp['slug'] ?: '';
             if (!$slug) continue;
-            $u = $baseUrl . '/page/' . $slug;
+            $u = $baseUrl . '/page/' . rawurlencode($slug);
             $lines[] = '  <url>';
             $lines[] = '    <loc>' . htmlspecialchars($u, ENT_XML1) . '</loc>';
-            $lines[] = '    <lastmod>' . substr((string)($sp['published_at'] ?: $today), 0, 10) . '</lastmod>';
+            $lines[] = '    <lastmod>' . substr((string)($sp['updated_at'] ?: $sp['published_at'] ?: $today), 0, 10) . '</lastmod>';
             $lines[] = '    <changefreq>monthly</changefreq>';
             $lines[] = '    <priority>0.82</priority>';
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="ar" href="' . $xmlEscape($u) . '"/>';
             $appendImages($lines, json_encode(array_filter([(string)($sp['og_image'] ?? ''), (string)($sp['cover_image'] ?? '')])), (string)$sp['title']);
             $lines[] = '  </url>';
         }
@@ -973,7 +978,7 @@ try {
         $lines[] = '</urlset>';
 
         $xml = implode("\n", $lines);
-        $totalUrls = count($staticPages) + count($neighborhoods) + count($services) + $pkgCount + 1 + count($posts) + count($seoPages);
+        $totalUrls = count($staticPages) + count($neighborhoods) + count($services) + $pkgCount + count($posts) + count($seoPages);
 
         return [
             'xml' => $xml,
@@ -983,7 +988,7 @@ try {
             'servicePages' => count($services),
             'containerPages' => $pkgCount,
             'packagePages' => $pkgCount,
-            'blogPages' => count($posts) + 1,
+            'blogPages' => count($posts),
             'seoPages' => count($seoPages)
         ];
     }
