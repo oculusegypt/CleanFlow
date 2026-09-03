@@ -74,7 +74,7 @@ export default function AreasIndexPage() {
             </nav>
             <div className="max-w-3xl">
               <span className="inline-flex items-center gap-2 text-secondary font-bold mb-4">
-                <MapPin size={18} /> تغطية كاملة لكافة أحياء مدينة الرياض
+                 <MapPin size={18} /> دليل أحياء ومناطق الخدمة في الرياض
               </span>
               <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
                 خدمات التنظيف في جميع أحياء الرياض
@@ -119,13 +119,13 @@ export default function AreasIndexPage() {
         <section className="py-14 bg-gray-50">
           <div className="container mx-auto px-4 md:px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-primary mb-4">لم تجد حيّك في القائمة؟</h2>
-            <p className="text-gray-600 mb-7">تواصل معنا لتأكيد التوصيل السريع إلى موقعك داخل الرياض وتحديد المقاس الأنسب.</p>
+             <p className="text-gray-600 mb-7">تواصل معنا لتأكيد إمكانية تنسيق الخدمة في موقعك داخل الرياض وتحديد نطاق الطلب.</p>
             <div className="flex gap-4 justify-center flex-wrap">
               <a href={`tel:${phoneCall || "0554498403"}`} className="inline-flex items-center gap-2 bg-primary text-white px-7 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors">
                 <Phone size={18} /> {phoneCall || "0554498403"}
               </a>
               <a href={`https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("أريد الاستفسار عن خدمات التنظيف بالرياض")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-green-500 text-white px-7 py-3 rounded-xl font-bold hover:bg-green-600 transition-colors">
-                <MessageCircle size={18} /> واتساب فوري
+                 <MessageCircle size={18} /> تواصل عبر واتساب
               </a>
             </div>
           </div>

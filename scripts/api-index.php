@@ -790,6 +790,25 @@ try {
                 $lines[] = '    </image:image>';
             }
         };
+        // Keep the PHP/Hostinger sitemap aligned with the build-time SEO
+        // policy. Legacy CMS rows remain reachable and can still be noindex,
+        // but thin or unsupported landing pages must not be advertised to
+        // search engines by the deployable sitemap.
+        $stripHtml = static function ($value): string {
+            return trim((string)preg_replace('/\s+/u', ' ', strip_tags((string)$value)));
+        };
+        $isIndexableSeoPage = static function (array $page) use ($stripHtml): bool {
+            $topic = (string)($page['title'] ?? '') . ' ' . (string)($page['target_keyword'] ?? '');
+            $unsupported = preg_match(
+                '/نقل\s*(?:عفش|اثاث|مكيفات)|تصليح\s*مكيفات|صيانة\s*مكيفات|فك\s*وتركيب\s*مكيفات|فني\s*مكيفات|مكيفات[\s\S]{0,30}مستعمل|مستعمل[\s\S]{0,30}مكيفات|غسيل\s*سيارات|تسليك\s*مجاري|عزل\s*(?:اسطح|خزانات)|كشف\s*تسربات|تطبيق\s*تنظيف/iu',
+                $topic,
+            );
+            $cleaningTopic = preg_match(
+                '/تنظيف|نظافة|غسيل|جلي|تلميع|تعقيم|مكافحة|رش\s*مبيدات|[إا]بادة/iu',
+                $topic,
+            );
+            return !$unsupported && (bool)$cleaningTopic && mb_strlen($stripHtml($page['content'] ?? ''), 'UTF-8') >= 900;
+        };
 
         $neighborhoods = [
             'north-riyadh', 'al-malqa', 'al-yasmin', 'al-narjis', 'al-aarid', 'hittin', 'al-sahafa', 'al-nafal', 'al-aqiq', 'al-rabi', 'al-ghadeer', 'al-wadi', 'al-nada', 'al-falah',
@@ -917,8 +936,8 @@ try {
         }
 
         // SEO Pages
-        $pagesStmt = $pdo->query("SELECT slug, seo_slug, title, published_at, cover_image, og_image FROM seo_pages WHERE status = 'published' AND is_active = 1 AND trim(target_keyword) <> '' AND length(trim(content)) >= 600");
-        $seoPages = $pagesStmt->fetchAll();
+        $pagesStmt = $pdo->query("SELECT slug, seo_slug, title, target_keyword, content, published_at, cover_image, og_image FROM seo_pages WHERE status = 'published' AND is_active = 1 AND trim(target_keyword) <> ''");
+        $seoPages = array_values(array_filter($pagesStmt->fetchAll(), $isIndexableSeoPage));
         foreach ($seoPages as $sp) {
             $slug = $sp['slug'] ?: $sp['seo_slug'] ?: '';
             if (!$slug) continue;

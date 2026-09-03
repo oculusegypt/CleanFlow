@@ -10,6 +10,7 @@ import { ServiceRequestForm } from "@/components/home/ServiceRequestForm"
 import { useServiceRequest } from "@/context/ServiceRequestContext"
 import { resolveServiceTypeFromCleaningPackage, getCleaningPackageImage, ARABIC_CATEGORY_NAMES } from "@/components/home/packages/PackageCard"
 import { siteUrl } from "@/lib/siteUrl"
+import { getPackageRouteSlug } from "@/lib/packageRoute"
 import { resolveContactNumbers, useSiteSettings } from "@/context/SiteSettingsContext"
 
 /** Convert container name+size to a URL slug (mirrors the old site's pattern) */
@@ -27,15 +28,29 @@ function findCleaningPackage(containers: CleaningPackage[], slug: string): Clean
     const sizePart  = c.size ? toSlug(c.size).toLowerCase() : ""
     const combined  = toSlug(`${c.name}-${c.size}`).toLowerCase()
     const seoSlug   = String((c as CleaningPackage & { seoSlug?: string }).seoSlug || "").toLowerCase()
+    const routeSlug = getPackageRouteSlug(c).toLowerCase()
     return (
       s === namePart ||
       s === sizePart ||
       s === combined ||
       s === seoSlug ||
+      s === routeSlug ||
       // partial match: slug contains a number from the size (e.g. "20" in "باقات التنظيف-20-ياردة")
       (sizePart && s.replace(/-/g, "").includes(sizePart.replace(/-/g, "")))
     )
   })
+}
+
+function sanitizePackageText(value: string): string {
+  return value
+    .replace(/(?:تبدأ|يبدأ)\s+من\s+[\d,]+\s*(?:ر\.س|ريال)/g, "يُحدد بعد مراجعة تفاصيل الموقع")
+    .replace(/\d{1,3}\s*(?:—|-|إلى)\s*\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/(?:معاينة|عرض سعر|عروض أسعار)\s+(?:ميدانية\s+)?(?:ال)?مجاني(?:ة)?/g, "معاينة أو عرض حسب تفاصيل الطلب")
+    .replace(/ضمان(?:اً|ا)?\s+(?:كامل|شامل|معتمد)(?:اً|ا)?(?:\s+100%)?/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/(?:أحدث|العالمية)\s+(?:المعدات|الأجهزة|ماكينات)/g, "الأدوات المناسبة")
+    .replace(/(?:مصرحة|معتمدة|مطابقة للاشتراطات الصحية)/g, "مناسبة للاستخدام")
+    .replace(/\b(?:140°|150 بار|3000 واط)\b/g, "حسب نوع الخدمة")
 }
 
 export default function PackageDetail() {
@@ -45,7 +60,7 @@ export default function PackageDetail() {
   const { data: apiCleaningPackages } = useGetPackages()
   const [container, setCleaningPackage] = useState<CleaningPackage | null>(null)
   const { openModal } = useServiceRequest()
-  const { phoneCall, phoneWhatsapp, phones } = useSiteSettings()
+  const { phoneCall, phoneWhatsapp, phones, companyName } = useSiteSettings()
 
   useEffect(() => {
     if (!apiCleaningPackages?.length) return
@@ -54,17 +69,58 @@ export default function PackageDetail() {
   }, [apiCleaningPackages, slug])
 
   const { call: callNumber, whatsapp: whatsappNumber } = resolveContactNumbers(phoneCall, phoneWhatsapp, phones)
+  const packageCanonical = siteUrl(`/cleaning-packages/${slug}`)
+  const packageDescription = container?.description
+    ? sanitizePackageText(container.description)
+    : "تفاصيل باقات تنظيف المنازل والفلل بالرياض حسب نوع العقار ونطاق العمل."
   const waHref = container && whatsappNumber
     ? `https://wa.me/966${whatsappNumber.replace(/^0/, "")}?text=${encodeURIComponent(`أريد الاستفسار عن ${container.name}`)}`
     : "#"
 
   useDocumentSEO({
     title: container
-      ? `${container.name}${container.size ? ` ${container.size}` : ""} — الشركة`
+      ? `${container.name}${container.size ? ` ${container.size}` : ""}${companyName ? ` | ${companyName}` : ""}`
       : "تفاصيل الباقة — خدمات التنظيف",
-    description: container?.description ?? "تفاصيل وأسعار باقات تنظيف المنازل والفلل بالرياض.",
-    canonical: siteUrl(`/cleaning-packages/${slug}`),
+    description: packageDescription,
+    canonical: packageCanonical,
   })
+
+  useEffect(() => {
+    if (!container) return
+    const id = "cleaning-package-schema"
+    document.getElementById(id)?.remove()
+    const script = document.createElement("script")
+    script.id = id
+    script.type = "application/ld+json"
+    script.textContent = JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": container.name,
+        "description": packageDescription,
+        "url": packageCanonical,
+        "inLanguage": "ar",
+        "serviceType": (container.category && ARABIC_CATEGORY_NAMES[container.category]) || "خدمات تنظيف",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": companyName || "خدمات التنظيف بالرياض",
+          ...(callNumber ? { "telephone": `+966${callNumber.replace(/[^\d]/g, "").replace(/^0/, "")}` } : {}),
+        },
+        "areaServed": { "@type": "City", "name": "الرياض" },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "الرئيسية", "item": siteUrl("/") },
+          { "@type": "ListItem", "position": 2, "name": "باقات التنظيف", "item": siteUrl("/cleaning-packages") },
+          { "@type": "ListItem", "position": 3, "name": container.name, "item": packageCanonical },
+        ],
+      },
+    ])
+    document.head.appendChild(script)
+    return () => document.getElementById(id)?.remove()
+  }, [container, packageCanonical, packageDescription, companyName, callNumber])
 
   if (!container && apiCleaningPackages) {
     // Not found — redirect to container listing
@@ -126,14 +182,12 @@ export default function PackageDetail() {
 
             {/* Details */}
             <div className="space-y-6">
-              {/* Price */}
-              {container.priceText && (
-                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
-                  <p className="text-sm text-gray-500 mb-1">السعر</p>
-                  <p className="text-2xl font-black text-primary">{container.priceText}</p>
-                  {container.priceNote && <p className="text-sm text-gray-600 mt-1">{container.priceNote}</p>}
-                </div>
-              )}
+              {/* Pricing depends on the actual size, quantity and requested scope. */}
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
+                <p className="text-sm text-gray-500 mb-1">تفاصيل العرض</p>
+                <p className="text-xl font-black text-primary">يُحدد بعد مراجعة تفاصيل الطلب</p>
+                <p className="text-sm text-gray-600 mt-1">تواصل معنا لبيان النوع والحجم والكمية وتنسيق العرض المناسب.</p>
+              </div>
 
               {/* Info grid */}
               <div className="grid grid-cols-2 gap-3">
@@ -159,7 +213,7 @@ export default function PackageDetail() {
 
               {/* Description */}
               {container.description && (
-                <p className="text-gray-600 leading-relaxed">{container.description}</p>
+                <p className="text-gray-600 leading-relaxed">{packageDescription}</p>
               )}
 
               {/* Features */}

@@ -498,6 +498,39 @@ export const ARABIC_AREA_SLUGS: Record<string, string> = {
   "al-futah": "حي-الفوطة",
 }
 
+function sanitizeAreaText(value: string): string {
+  return value
+    .replace(/(?:30|35|25)\s*(?:—|-|إلى)?\s*(?:40|45)?\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/(?:معاينة|عرض سعر|عروض أسعار)\s+(?:ميدانية\s+)?مجاني(?:ة)?/g, "معاينة أو عرض حسب تفاصيل الطلب")
+    .replace(/ضمان(?:اً|ا)?\s+(?:كامل|شامل|معتمد)(?:\s+100%)?/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/ضمان\s+(?:صحي|سنة كاملة|حتى سنة|من 6 أشهر إلى سنة كاملة)/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/(?:تغطية سريعة|استجابة فورية|وصول سريع|تسليم فوري|تعقيم فوري|تجفيف سريع)/g, "تنسيق حسب الموعد")
+    .replace(/أحدث (?:ماكينات|الأجهزة|المعدات)/g, "الأدوات المناسبة")
+    .replace(/(?:مصرحة|معتمدة|مطابقة للاشتراطات الصحية)/g, "مناسبة للاستخدام")
+    .replace(/\b(?:140°|150 بار|3000 واط)\b/g, "حسب نوع الخدمة")
+    .replace(/أكثر من\s+50\s+حي(?:اً)?/g, "أحياء متعددة")
+}
+
+function sanitizeAreaData(area: AreaData): AreaData {
+  return {
+    ...area,
+    title: sanitizeAreaText(area.title),
+    description: sanitizeAreaText(area.description),
+    h1: sanitizeAreaText(area.h1),
+    propertyProfile: sanitizeAreaText(area.propertyProfile),
+    arrivalTime: "حسب الموعد والتوفر",
+    primaryServices: area.primaryServices.map((service) => ({
+      ...service,
+      name: sanitizeAreaText(service.name),
+      desc: sanitizeAreaText(service.desc),
+    })),
+    faqs: area.faqs.map((faq) => ({
+      q: sanitizeAreaText(faq.q),
+      a: sanitizeAreaText(faq.a),
+    })),
+  }
+}
+
 export function resolveArea(rawSlug: string) {
   if (!rawSlug) return null
   const decoded = decodeURIComponent(rawSlug).trim()
@@ -516,7 +549,7 @@ export default function NeighborhoodPage() {
   const [, params] = useRoute("/areas/:slug")
   const rawSlug = params?.slug ?? ""
   const resolved = resolveArea(rawSlug)
-  const area = resolved?.area
+  const area = resolved?.area ? sanitizeAreaData(resolved.area) : undefined
   const activeSlug = resolved?.slug || rawSlug
   const { openModal } = useServiceRequest()
   const { companyName, phoneCall, phoneWhatsapp, logoUrl, priceRange, address, city, region, country, publicUrl } = useSiteSettings()
@@ -624,7 +657,7 @@ export default function NeighborhoodPage() {
                   <MapPin size={13} /> نطاق تغطية {area.region}
                 </span>
                 <span className="inline-flex items-center gap-1 bg-white/10 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                  <Clock size={13} /> وقت الاستجابة والتوصيل: {area.arrivalTime}
+                  <Clock size={13} /> تنسيق الموعد حسب التوفر
                 </span>
               </div>
 
@@ -649,7 +682,7 @@ export default function NeighborhoodPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3.5 rounded-xl font-bold text-base md:text-lg transition shadow-lg"
                 >
-                  <MessageCircle size={20} /> واتساب فوري
+                   <MessageCircle size={20} /> تواصل عبر واتساب
                 </a>
               </div>
             </div>
@@ -687,7 +720,7 @@ export default function NeighborhoodPage() {
                 زمن الوصول وفريق العمل
               </div>
               <p className="text-slate-600 text-sm leading-relaxed">
-                فرق عمل متنقلة مجهزة بمكائن الجلي والبخار تصل إلى موقعك في {area.name} خلال <strong>{area.arrivalTime}</strong> مع ضمان كامل على التنفيذ.
+                ننسق نوع الفريق والأدوات وموعد التنفيذ في {area.name} بعد مراجعة تفاصيل الطلب ونطاق العمل.
               </p>
             </div>
           </section>
@@ -699,7 +732,7 @@ export default function NeighborhoodPage() {
                 الخدمات الأكثر طلباً في {area.name}
               </h2>
               <p className="text-slate-600 text-sm md:text-base mt-1">
-                خدمات تنظيف متخصصة تنفذ بأعلى معايير الجودة وبأجهزة متطورة.
+                 خدمات تنظيف متاحة مع تحديد نطاق العمل والأدوات المناسبة لكل طلب.
               </p>
             </div>
 
@@ -714,7 +747,7 @@ export default function NeighborhoodPage() {
                     href={svc.link}
                     className="inline-flex items-center gap-1.5 text-primary font-bold text-sm hover:text-primary/80 transition"
                   >
-                    تفاصيل الخدمة والأسعار <ArrowLeft size={16} />
+                   تفاصيل الخدمة <ArrowLeft size={16} />
                   </Link>
                 </div>
               ))}
@@ -724,8 +757,8 @@ export default function NeighborhoodPage() {
           {/* Transparent Local Pricing Section */}
           <section className="bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 shadow-sm space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">باقات وأسعار التنظيف في {area.name}</h2>
-              <p className="text-slate-600 text-sm mt-1">أسعار تقديرية واضحة وشاملة لكافة المواد والمعدات والعمالة.</p>
+              <h2 className="text-2xl font-bold text-slate-900">باقات التنظيف في {area.name}</h2>
+              <p className="text-slate-600 text-sm mt-1">يتحدد العرض بعد مراجعة نوع العقار والمساحة ونطاق العمل.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -735,7 +768,7 @@ export default function NeighborhoodPage() {
                     <h3 className="text-xl font-bold text-slate-900">باقة تنظيف الشقق السكنية</h3>
                     <p className="text-slate-600 text-sm mt-1">شقق مفروشة، جديدة، أو بعد الترميم في {area.name}</p>
                   </div>
-                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg text-xs font-bold">باقة مميزة</span>
+                   <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg text-xs font-bold">مناسبة للشقق</span>
                 </div>
                 <ul className="space-y-2 text-sm text-slate-700">
                   <li className="flex items-center gap-2"><CheckCircle size={16} className="text-emerald-600" /> غسيل وتعقيم الأرضيات والمطابخ</li>
@@ -746,7 +779,7 @@ export default function NeighborhoodPage() {
                   onClick={() => openModal({ packageSize: `تنظيف شقق ${area.name}` })}
                   className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition shadow-sm"
                 >
-                  طلب عرض سعر مجاني
+                  طلب عرض حسب التفاصيل
                 </button>
               </div>
 
@@ -756,7 +789,7 @@ export default function NeighborhoodPage() {
                     <h3 className="text-xl font-bold text-slate-900">باقة تنظيف الفلل والقصور</h3>
                     <p className="text-slate-600 text-sm mt-1">فلل سكنية، ملاحق، وأحواش في {area.name}</p>
                   </div>
-                  <span className="bg-amber-400/20 text-amber-800 px-3 py-1 rounded-lg text-xs font-bold">الأكثر طلباً</span>
+                   <span className="bg-amber-400/20 text-amber-800 px-3 py-1 rounded-lg text-xs font-bold">مناسبة للفلل</span>
                 </div>
                 <ul className="space-y-2 text-sm text-slate-700">
                   <li className="flex items-center gap-2"><CheckCircle size={16} className="text-emerald-600" /> تنظيف كامل للأدوار والدرج والأحواش</li>
@@ -767,7 +800,7 @@ export default function NeighborhoodPage() {
                   onClick={() => openModal({ packageSize: `تنظيف فلل ${area.name}` })}
                   className="w-full bg-amber-500 text-slate-950 py-3 rounded-xl font-bold hover:bg-amber-400 transition shadow-sm"
                 >
-                  طلب عرض سعر مجاني
+                  طلب عرض حسب التفاصيل
                 </button>
               </div>
             </div>
@@ -824,7 +857,7 @@ export default function NeighborhoodPage() {
                 احجز خدمة تنظيف منزلك أو فيلتك الآن في {area.name}
               </h2>
               <p className="text-slate-200 text-base md:text-lg">
-                معاينة مجانية • وصول سريع خلال {area.arrivalTime} • ضمان شامل 100%
+                تنسيق الموعد • تحديد نطاق العمل • عرض مناسب لتفاصيل الموقع
               </p>
             </div>
 
@@ -841,7 +874,7 @@ export default function NeighborhoodPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition shadow-lg"
               >
-                <MessageCircle size={20} /> واتساب مباشر
+                   <MessageCircle size={20} /> تواصل عبر واتساب
               </a>
             </div>
           </section>

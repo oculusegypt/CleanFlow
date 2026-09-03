@@ -100,6 +100,19 @@ const dynamicServices = db.prepare(`
   ORDER BY "order" ASC
   LIMIT 20
 `).all();
+const approvedReviewRows = db.prepare(`
+  SELECT customer_name, customer_city, rating, comment
+  FROM reviews
+  WHERE status = 'approved'
+  ORDER BY COALESCE(approved_at, created_at) DESC, id DESC
+`).all();
+const approvedReviewSummary = approvedReviewRows.reduce((summary, review) => {
+  const rating = Number(review.rating);
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) return summary;
+  summary.count += 1;
+  summary.total += rating;
+  return summary;
+}, { count: 0, total: 0 });
 
 if (!existsSync(join(distPublic, "index.html"))) {
   console.error("❌ لم يُعثر على dist/public/index.html — شغّل vite build أولاً");
@@ -207,6 +220,57 @@ function breadcrumbHtml(items) {
   }).join("");
 }
 
+// Keep generated marketing copy conservative unless a value is backed by
+// current business data. This changes only public generated HTML/JSON-LD.
+function sanitizeClaims(value) {
+  return String(value || "")
+    .replace(/(?:تبدأ|يبدأ)\s+من\s+[\d,]+\s*(?:ر\.س|ريال)(?:\s*\/\s*(?:م²|للمكيف))?/g, "يُحدد بعد مراجعة تفاصيل الموقع")
+    .replace(/تبدأ أسعار[^<.،]*(?:ريال|ر\.س)[^<.]*/g, "يُحدد السعر بعد مراجعة تفاصيل الموقع")
+    .replace(/\d{1,3}\s*(?:—|-|إلى)\s*\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/(?:معاينة|عرض سعر|عروض أسعار)\s+(?:ميدانية\s+)?(?:ال)?مجاني(?:ة)?/g, "معاينة أو عرض حسب تفاصيل الطلب")
+    .replace(/ضمان(?:اً|ا)?\s+كامل(?:اً)?/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/ضمان(?:اً|ا)?\s+شامل(?:اً)?/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/ضمان\s+(?:الجودة\s+)?المعتمد/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/ضمان\s+تسليم\s+كامل/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/ضمان\s+(?:صحي|سنة كاملة|حتى سنة|من 6 أشهر إلى سنة كاملة)/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/أكثر من\s+50\s+حي(?:اً)?/g, "أحياء متعددة")
+    .replace(/(?:تغطية كاملة لكافة|تغطية شاملة لجميع|كافة أحياء ومناطق|جميع أحياء)\s+(?:أحياء ومناطق\s+)?الرياض/g, "الأحياء المدرجة في الرياض")
+    .replace(/(?:وصول سريع|استجابة فورية|حجز فوري|عرض سعر فوري|اتصال فوري|تسليم فوري|تعقيم فوري|تجفيف فوري)/g, "تنسيق حسب الموعد")
+    .replace(/واتساب فوري/g, "واتساب مباشر")
+    .replace(/(?:أحدث|العالمية)\s+(?:المعدات|الأجهزة|ماكينات)/g, "الأدوات المناسبة")
+    .replace(/ماكينات إيطالية/g, "معدات مناسبة")
+    .replace(/بخار(?: حراري)?\s*140°/g, "تنظيف بالبخار")
+    .replace(/ضغط\s*150\s*بار/g, "ضغط مناسب")
+    .replace(/أسعار واضحة وشفافة بدون أي رسوم خفية/g, "تفاصيل عرض واضحة بعد مراجعة نطاق العمل")
+    .replace(/خبرة\s*8\+\s*سنوات/g, "خبرة في تنفيذ خدمات التنظيف")
+    .replace(/الأكثر طلباً/g, "باقة مقترحة");
+}
+
+const LEGACY_PACKAGE_ROUTE_SLUGS = {
+  1: "tanzeef-shaqaq",
+  2: "tanzeef-filal",
+  3: "tanzeef-qosoor",
+  4: "tanzeef-qabl-alnaql",
+  5: "gaseel-majalis-bukhar",
+  6: "jaly-rakham",
+  7: "tanzeef-khazanat",
+  8: "gaseel-mokeyafat",
+  9: "mokafahat-hasharat",
+  10: "tanzeef-bad-albenaa",
+  11: "tanzeef-wajahat",
+  12: "tanzeef-masajid",
+  13: "shahadat-salama",
+  14: "tarkeeb-anthimat-wiqaya",
+  15: "taqreer-fanni-fawri",
+  16: "taqreer-fanni-ghayr-fawri",
+  17: "aqd-siyana-difaa-madani",
+};
+
+function packageRouteSlug(pkg) {
+  return LEGACY_PACKAGE_ROUTE_SLUGS[pkg.id] || pkg.seo_slug || pkg.slug || "";
+}
+
 function homeSeoLinksNoscript() {
   const pages = db.prepare(`
     SELECT title, slug, target_keyword, seo_keywords, content
@@ -234,9 +298,10 @@ function homeSeoLinksNoscript() {
 
 // ── المولّد الرئيسي للصفحة ────────────────────────────────────────────────
 function renderPage({ title, description, keywords = "", canonical, ogImage, ogType = "website", schemas = [], breadcrumbs = [], bodyContent, robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" }) {
-  title = replaceLegacyCompanyName(title);
-  description = replaceLegacyCompanyName(description);
-  keywords = replaceLegacyCompanyName(keywords);
+  title = sanitizeClaims(replaceLegacyCompanyName(title));
+  description = sanitizeClaims(replaceLegacyCompanyName(description));
+  keywords = sanitizeClaims(replaceLegacyCompanyName(keywords));
+  bodyContent = sanitizeClaims(bodyContent);
   // Keep canonical and social URLs absolute when the build has a configured
   // public origin; otherwise preserve relative URLs for local development.
   const canonicalUrl = canonical || `${SITE_URL}/`;
@@ -247,7 +312,7 @@ function renderPage({ title, description, keywords = "", canonical, ogImage, ogT
   // after hydration. SITE_URL is already resolved from build configuration or
   // the database above, so no browser origin is needed here.
   const schemasHtml = schemas
-    .map((schema) => `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`)
+    .map((schema) => `<script type="application/ld+json">\n${sanitizeClaims(JSON.stringify(schema, null, 2))}\n</script>`)
     .join("\n  ");
 
   return `<!DOCTYPE html>
@@ -369,13 +434,15 @@ function dynamicHomeSchema() {
         "closes": "23:00"
       }
     ],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "184",
-      "bestRating": "5",
-      "worstRating": "1"
-    },
+    ...(approvedReviewSummary.count ? {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": (approvedReviewSummary.total / approvedReviewSummary.count).toFixed(2),
+        "reviewCount": String(approvedReviewSummary.count),
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    } : {}),
     ...(dynamicServices.length ? {
       hasOfferCatalog: {
         "@type": "OfferCatalog",
@@ -422,26 +489,10 @@ function dynamicHomeSchema() {
         },
         {
           "@type": "Question",
-          "name": `كم أسعار خدمات التنظيف في الرياض لدى ${siteCompanyName}؟`,
+          "name": "كيف يتم تحديد نطاق وموعد خدمة التنظيف؟",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "تبدأ أسعار تنظيف الشقق من 350 ريال، الفلل من 750 ريال، غسيل المجالس بالبخار من 200 ريال، غسيل المكيفات من 80 ريال، وجلي الرخام من 15 ريال للمتر المربع، مع معاينة مجانية وضمان كامل."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "هل تقدمون ضماناً رسمياً على خدمات التنظيف؟",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "نعم، نقدم ضماناً كاملاً على جودة التنفيذ وتسليم الموقع بالملاحظات المطلوبة مع استعداد تام لمعاينة أي تعديلات مجاناً فوراً."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "هل تغطون جميع أحياء شمال وشرق وغرب وجنوب ووسط الرياض؟",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "نعم، تغطي فرقنا الميدانية أكثر من 50 حياً بالرياض مع سرعة وصول تتراوح بين 30 إلى 45 دقيقة."
+            "text": "يتحدد نطاق الخدمة والموعد بعد معرفة موقع العقار ونوعه والمساحة والخدمة المطلوبة، ثم ينسق فريق خدمة العملاء التفاصيل مع العميل."
           }
         }
       ]
@@ -477,6 +528,18 @@ function generateFullHomepageStaticContent() {
   const phoneCall = sitePhoneCall || "0554498403";
   const phoneWa = sitePhoneWhatsapp || "0554498403";
   const waUrl = waLink(phoneWa, "السلام عليكم، أرغب في حجز خدمة تنظيف بالرياض");
+  const reviewAverage = approvedReviewSummary.count
+    ? (approvedReviewSummary.total / approvedReviewSummary.count).toFixed(1)
+    : "";
+  const reviewSummaryText = approvedReviewSummary.count
+    ? `★ ${reviewAverage} من 5 بناءً على ${approvedReviewSummary.count} تقييماً منشوراً`
+    : "يمكنك الاطلاع على تجارب العملاء المنشورة في صفحات الخدمات";
+  const reviewCards = approvedReviewRows.slice(0, 3).map((review) => `
+        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+          <div style="color:#d69e2e;font-size:16px;margin-bottom:6px">${"★".repeat(Math.max(0, Math.min(5, Number(review.rating) || 0)))} (${esc(review.rating)}/5)</div>
+          <p style="font-size:14px;color:#4a5568;margin:0 0 10px;line-height:1.7">${esc(review.comment)}</p>
+          <strong style="font-size:13px;color:#1e3a5f">— ${esc(review.customer_name)}${review.customer_city ? ` (${esc(review.customer_city)})` : ""}</strong>
+        </div>`).join("");
 
   return `
   <header style="background:#1e3a5f;color:#fff;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">
@@ -487,7 +550,7 @@ function generateFullHomepageStaticContent() {
       </div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <a href="tel:${esc(phoneCall)}" style="background:#2b6cb0;color:#fff;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">📞 ${esc(phoneCall)}</a>
-        <a href="${esc(waUrl)}" style="background:#25d366;color:#fff;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">واتساب فوري ↗</a>
+        <a href="${esc(waUrl)}" style="background:#25d366;color:#fff;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">تواصل عبر واتساب ↗</a>
       </div>
     </div>
   </header>
@@ -495,22 +558,22 @@ function generateFullHomepageStaticContent() {
   <main style="max-width:1200px;margin:0 auto;padding:24px 16px;color:#1a202c;line-height:1.8">
     <!-- Hero Section -->
     <section id="hero" style="text-align:center;padding:40px 16px;background:linear-gradient(180deg,#ebf8ff 0%,#fff 100%);border-radius:20px;margin-bottom:40px;border:1px solid #bee3f8">
-      <span style="display:inline-block;background:#ebf4ff;color:#2b6cb0;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;margin-bottom:16px">⭐ الخيار الأول لخدمات تنظيف المنازل والفلل بالرياض</span>
+       <span style="display:inline-block;background:#ebf4ff;color:#2b6cb0;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;margin-bottom:16px">خدمات تنظيف للمنازل والمنشآت بالرياض</span>
       <h1 style="font-size:clamp(26px,5vw,42px);font-weight:900;color:#1e3a5f;margin:0 0 16px;line-height:1.3">
         مؤسسة السهم كلين لخدمات تنظيف المنازل والفلل بالرياض
       </h1>
       <p style="font-size:18px;color:#4a5568;max-width:850px;margin:0 auto 24px;line-height:1.8">
-        نقدم خدمات النظافة المتخصصة والشاملة للفلل، القصور، الشقق، والمباني بعد التشطيب، وغسيل المجالس والمفروشات بالبخار 140°، وجلي وتلميع الرخام بالألماس، وصيانة وتنظيف المكيفات مع ضمان 100% وسرعة وصول خلال 30 إلى 45 دقيقة لكافة أحياء الرياض.
+         نقدم خدمات تنظيف للفلل والقصور والشقق والمكاتب والمنشآت، إضافة إلى التنظيف بعد التشطيب وغسيل المفروشات وجلي الرخام وتنظيف المكيفات والخزانات. يتحدد نطاق العمل والموعد حسب موقع العقار واحتياجه.
       </p>
       <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:24px">
         <a href="tel:${esc(phoneCall)}" style="background:#1e3a5f;color:#fff;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none">اتصال مباشر: ${esc(phoneCall)}</a>
         <a href="${esc(waUrl)}" style="background:#25d366;color:#fff;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none">حجز موعد عبر واتساب ↗</a>
       </div>
       <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;font-size:14px;color:#4a5568;font-weight:700">
-        <span>⏱️ وصول خلال 30-45 دقيقة</span>
-        <span>🛡️ ضمان كامل على العمل</span>
-        <span>✨ ماكينات إيطالية ومواد معتمدة</span>
-        <span>★ 4.9 تقييم العملاء (184 تقييماً)</span>
+         <span>⏱️ تنسيق الموعد حسب التوفر</span>
+         <span>🧾 عرض خدمة حسب تفاصيل الموقع</span>
+         <span>🧰 اختيار الأدوات حسب نوع السطح</span>
+         <span>${esc(reviewSummaryText)}</span>
       </div>
     </section>
 
@@ -518,38 +581,38 @@ function generateFullHomepageStaticContent() {
     <section id="services" style="margin-bottom:48px">
       <div style="text-align:center;margin-bottom:32px">
         <h2 style="font-size:28px;font-weight:800;color:#1e3a5f;margin:0 0 8px">خدماتنا الأساسية للتنظيف المتخصص بالرياض</h2>
-        <p style="font-size:16px;color:#718096;margin:0">خدمات متكاملة للمباني السكنية والتجارية بأحدث المعدات الفنية والعمالة المدربة</p>
+         <p style="font-size:16px;color:#718096;margin:0">خدمات للمباني السكنية والتجارية مع تحديد نطاق العمل والأدوات المناسبة قبل التنفيذ</p>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-filal-alryad" style="color:inherit;text-decoration:none">تنظيف الفلل والقصور</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">تنظيف شامل للأدوار، الأجنحة، المسابح، الواجهات، والحدائق مع التعقيم الشامل.</p>
-          <a href="/services/tanzeef-filal-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <a href="/services/tanzeef-filal-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-shaqaq-alryad" style="color:inherit;text-decoration:none">تنظيف الشقق السكنية</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">غسيل السيراميك، المطابخ، الحمامات، الدرايش، وتطهير كامل بأحدث المنظفات.</p>
-          <a href="/services/tanzeef-shaqaq-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <a href="/services/tanzeef-shaqaq-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-bad-altashteeb-alryad" style="color:inherit;text-decoration:none">تنظيف بعد البناء والتشطيب</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">إزالة بقايا الإسمنت، الدهان، الترويبة، وتلميع الأرضيات وتسليم مفتاح جاهز للسكن.</p>
-          <a href="/services/tanzeef-bad-altashteeb-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <a href="/services/tanzeef-bad-altashteeb-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/gaseel-majalis-bukhar-alryad" style="color:inherit;text-decoration:none">غسيل المجالس والكنب بالبخار</a></h3>
-          <p style="font-size:15px;color:#4a5568;margin-bottom:16px">تنظيف حراري بدرجة 140° وتعقيم وإزالة البقع الصعبة مع تجفيف فوري خلال 30 دقيقة.</p>
-          <a href="/services/gaseel-majalis-bukhar-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">تنظيف بالبخار للمجالس والمفروشات مع معالجة البقع وفق نوع القماش.</p>
+           <a href="/services/gaseel-majalis-bukhar-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-mokeyafat-alryad" style="color:inherit;text-decoration:none">تنظيف وغسيل المكيفات</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">غسيل بضغط ماء 150 بار مع جراب الحماية المائي لمنع تناثر المياه وفحص الفريون.</p>
-          <a href="/services/tanzeef-mokeyafat-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <a href="/services/tanzeef-mokeyafat-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
           <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/jaly-rakham-alryad" style="color:inherit;text-decoration:none">جلي وتلميع الرخام والبلاط</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">جلي مائي بأقراص الألماس وتلميع بالكريستال الإيطالي لإعادة البريق ولمعان المرآة.</p>
-          <a href="/services/jaly-rakham-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة والأسعار ←</a>
+           <a href="/services/jaly-rakham-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
       </div>
     </section>
@@ -557,39 +620,39 @@ function generateFullHomepageStaticContent() {
     <!-- Pricing Packages -->
     <section id="packages" style="margin-bottom:48px;padding:32px 20px;background:#f7fafc;border-radius:20px;border:1px solid #e2e8f0">
       <div style="text-align:center;margin-bottom:28px">
-        <h2 style="font-size:26px;font-weight:800;color:#1e3a5f;margin:0 0 8px">باقات وأسعار التنظيف في الرياض</h2>
-        <p style="font-size:15px;color:#718096;margin:0">أسعار واضحة وشفافة بدون أي رسوم خفية مع معاينة مجانية</p>
+       <h2 style="font-size:26px;font-weight:800;color:#1e3a5f;margin:0 0 8px">باقات التنظيف في الرياض</h2>
+       <p style="font-size:15px;color:#718096;margin:0">تتحدد تفاصيل العرض بعد معرفة نوع العقار والمساحة ونطاق العمل.</p>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
         <div style="padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;text-align:center">
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">تنظيف الشقق السكنية</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 350 <span style="font-size:14px;font-weight:600">ريال</span></div>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
           <p style="font-size:13px;color:#718096;margin:0">تنظيف وتعقيم كامل للغرف والمطبخ والحمامات</p>
         </div>
         <div style="padding:20px;background:#fff;border-radius:12px;border:2px solid #2b6cb0;text-align:center;position:relative">
           <span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#2b6cb0;color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">الأكثر طلباً</span>
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">تنظيف الفلل والقصور</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 750 <span style="font-size:14px;font-weight:600">ريال</span></div>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
           <p style="font-size:13px;color:#718096;margin:0">تنظيف شامل للأدوار والدرج والأحواش والمسابح</p>
         </div>
         <div style="padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;text-align:center">
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">تنظيف بعد التشطيب</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 900 <span style="font-size:14px;font-weight:600">ريال</span></div>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
           <p style="font-size:13px;color:#718096;margin:0">إزالة الإسمنت والدهان والترويبة وتسليم مفتاح</p>
         </div>
         <div style="padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;text-align:center">
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">غسيل المجالس بالبخار</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 200 <span style="font-size:14px;font-weight:600">ريال</span></div>
-          <p style="font-size:13px;color:#718096;margin:0">تنظيف عميق بالبخار 140° مع التجفيف الفوري</p>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
+          <p style="font-size:13px;color:#718096;margin:0">تنظيف بالبخار للمجالس والمفروشات حسب نوع القماش</p>
         </div>
         <div style="padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;text-align:center">
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">غسيل المكيفات سبليت</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 80 <span style="font-size:14px;font-weight:600">ريال</span></div>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
           <p style="font-size:13px;color:#718096;margin:0">غسيل بالضغط العالي مع جراب الحماية المائي</p>
         </div>
         <div style="padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;text-align:center">
           <h3 style="font-size:18px;font-weight:700;margin:0 0 8px">جلي وتلميع الرخام</h3>
-          <div style="font-size:24px;font-weight:900;color:#2b6cb0;margin-bottom:8px">يبدأ من 15 <span style="font-size:14px;font-weight:600">ريال / م²</span></div>
+          <div style="font-size:20px;font-weight:900;color:#2b6cb0;margin-bottom:8px">عرض مخصص حسب التفاصيل</div>
           <p style="font-size:13px;color:#718096;margin:0">جلي بالألماس وتلميع بالكريستال الإيطالي</p>
         </div>
       </div>
@@ -599,58 +662,42 @@ function generateFullHomepageStaticContent() {
     <section id="why-us" style="margin-bottom:48px;padding:32px 24px;background:#1e3a5f;color:#fff;border-radius:20px">
       <div style="text-align:center;margin-bottom:28px">
         <h2 style="font-size:26px;font-weight:800;margin:0 0 8px">لماذا تختار مؤسسة السهم كلين بالرياض؟</h2>
-        <p style="font-size:16px;color:#cbd5e0;margin:0">نلتزم بأعلى معايير الجودة والاحترافية لتقديم تجربة تنظيف استثنائية</p>
+        <p style="font-size:16px;color:#cbd5e0;margin:0">نوضح نطاق الخدمة وننسق التفاصيل المناسبة لكل موقع قبل التنفيذ</p>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">
-          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🛠️ أحدث المعدات العالمية</h4>
-          <p style="font-size:14px;color:#e2e8f0;margin:0">ماكينات جلي الرخام الإيطالية (Klindex)، ومضخات غسيل 150 بار، وأجهزة بخار 140°C.</p>
+          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🛠️ أدوات مناسبة لنوع السطح</h4>
+           <p style="font-size:14px;color:#e2e8f0;margin:0">نختار أدوات التنظيف المناسبة لنوع السطح وحالة المكان.</p>
         </div>
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">
-          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🌿 مواد آمنة ومعتمدة</h4>
-          <p style="font-size:14px;color:#e2e8f0;margin:0">منظفات ومعقمات ألمانية مصرحة وصديقة للبيئة بدون أي روائح نفاذة أو أضرار صحية.</p>
+          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🌿 اختيار المواد المناسبة</h4>
+           <p style="font-size:14px;color:#e2e8f0;margin:0">نوضح المواد المناسبة للاستخدام قبل تنفيذ الأعمال التي تتطلب ذلك.</p>
         </div>
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">
-          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🛡️ ضمان الجودة 100%</h4>
-          <p style="font-size:14px;color:#e2e8f0;margin:0">تسليم الموقع وفق جدول ملاحظات العميل مع استعداد تام لمعاينة وتعديل أي ملاحظة مجاناً.</p>
+           <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">📝 نطاق عمل واضح</h4>
+           <p style="font-size:14px;color:#e2e8f0;margin:0">نراجع تفاصيل الطلب ونحدد الأعمال المطلوبة قبل تنسيق الموعد والتنفيذ.</p>
         </div>
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">
-          <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">📍 تغطية شاملة لكافة الأحياء</h4>
-          <p style="font-size:14px;color:#e2e8f0;margin:0">أكثر من 50 حياً في شمال وشرق وغرب وجنوب ووسط الرياض مع فرق ميدانية سريعة الانتشار.</p>
+           <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">📍 خدمة أحياء الرياض</h4>
+           <p style="font-size:14px;color:#e2e8f0;margin:0">تواصل معنا لتأكيد إمكانية تنسيق الخدمة في موقعك داخل الرياض.</p>
         </div>
       </div>
     </section>
 
     <!-- Verified Customer Reviews (E-E-A-T) -->
-    <section id="reviews" style="margin-bottom:48px">
+    ${reviewCards ? `<section id="reviews" style="margin-bottom:48px">
       <div style="text-align:center;margin-bottom:24px">
         <h2 style="font-size:24px;font-weight:800;color:#1e3a5f;margin:0 0 6px">آراء وتقييمات العملاء الموثقة في الرياض</h2>
-        <p style="font-size:15px;color:#718096;margin:0">★ 4.9 من 5 بناءً على 184 تقييماً موثقاً لخدمات التنظيف بالرياض</p>
+         <p style="font-size:15px;color:#718096;margin:0">${esc(reviewSummaryText)}</p>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-          <div style="color:#d69e2e;font-size:16px;margin-bottom:6px">★★★★★ (5/5)</div>
-          <p style="font-size:14px;color:#4a5568;margin:0 0 10px;line-height:1.7">"خدمة تنظيف فيلا بعد التشطيب بحي الملقا ممتازة جداً. تمت إزالة كل بقع الدهان والإسمنت وتلميع الرخام باحتراف عالي."</p>
-          <strong style="font-size:13px;color:#1e3a5f">— أبو فهد القحطاني (حي الملقا)</strong>
-        </div>
-        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-          <div style="color:#d69e2e;font-size:16px;margin-bottom:6px">★★★★★ (5/5)</div>
-          <p style="font-size:14px;color:#4a5568;margin:0 0 10px;line-height:1.7">"غسيل مجالس وكنب بالبخار وتنظيف 4 مكيفات سبليت. شغل نظيف جداً وتجفيف سريع بدون أي فوضى."</p>
-          <strong style="font-size:13px;color:#1e3a5f">— سلطان العتيبي (حي الياسمين)</strong>
-        </div>
-        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-          <div style="color:#d69e2e;font-size:16px;margin-bottom:6px">★★★★★ (5/5)</div>
-          <p style="font-size:14px;color:#4a5568;margin:0 0 10px;line-height:1.7">"جلي وتلميع رخام الصالة بالكريستال الإيطالي، النتيجة كانت مبهرة وعاد الرخام كالجديد تماماً."</p>
-          <strong style="font-size:13px;color:#1e3a5f">— خالد الدوسري (حي النرجس)</strong>
-        </div>
-      </div>
-    </section>
+       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">${reviewCards}</div>
+    </section>` : ""}
 
     <!-- Service Areas (50 Districts) -->
     <section id="areas" style="margin-bottom:48px;padding:28px 20px;background:#ebf8ff;border-radius:20px;border:1px solid #bee3f8">
       <div style="text-align:center;margin-bottom:20px">
         <h2 style="font-size:24px;font-weight:800;color:#1e3a5f;margin:0 0 6px">أحياء ومناطق الخدمة في مدينة الرياض</h2>
-        <p style="font-size:15px;color:#4a5568;margin:0">نغطي أكثر من 50 حياً مع وصول سريع لفرقنا الميدانية المجهزة</p>
+         <p style="font-size:15px;color:#4a5568;margin:0">تعرّف على الأحياء المدرجة وتواصل معنا لتأكيد إمكانية تنسيق الخدمة في موقعك</p>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
         <a href="/areas/حي-الملقا" style="padding:6px 14px;background:#fff;color:#2b6cb0;border-radius:20px;text-decoration:none;font-size:13px;font-weight:700;border:1px solid #bee3f8">حي الملقا</a>
@@ -683,8 +730,8 @@ function generateFullHomepageStaticContent() {
           <p style="font-size:14px;color:#4a5568;margin:0;line-height:1.7">نقدم تنظيف الفلل، القصور، الشقق، المباني بعد التشطيب وإزالة الإسمنت، غسيل المجالس والكنب بالبخار 140°، جلي وتلميع الرخام بالألماس، تنظيف المكيفات سبليت، وتعقيم الخزانات ومكافحة الحشرات.</p>
         </div>
         <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-          <h3 style="font-size:16px;font-weight:800;color:#1e3a5f;margin:0 0 6px">كم تبدأ أسعار خدمات التنظيف لديكم؟</h3>
-          <p style="font-size:14px;color:#4a5568;margin:0;line-height:1.7">تبدأ أسعار الشقق من 350 ريال، الفلل من 750 ريال، غسيل المجالس من 200 ريال، غسيل المكيفات من 80 ريال، وجلي الرخام من 15 ريال/م²، مع معاينة مجانية وضمان كامل.</p>
+           <h3 style="font-size:16px;font-weight:800;color:#1e3a5f;margin:0 0 6px">كيف يتم تحديد عرض خدمة التنظيف لديكم؟</h3>
+           <p style="font-size:14px;color:#4a5568;margin:0;line-height:1.7">تتحدد تفاصيل العرض بعد معرفة نوع العقار والمساحة وعدد الغرف ونطاق العمل والخدمات الإضافية المطلوبة، ثم نوضح التفاصيل قبل تأكيد الموعد.</p>
         </div>
         <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
           <h3 style="font-size:16px;font-weight:800;color:#1e3a5f;margin:0 0 6px">ما هي مدة وصول الفريق بعد تأكيد الحجز؟</h3>
@@ -739,14 +786,14 @@ function updateIndexSeo(html) {
   next = next.replace(/<script\s+type="application\/ld\+json">[\s\S]*?<\/script>\s*/gi, "");
   const schemaIds = ["home-local-business-schema", "home-website-schema", "home-faq-schema", "home-breadcrumbs-schema"];
   const schemas = dynamicHomeSchema().map((schema, index) =>
-    `<script id="${schemaIds[index] || `home-schema-${index}`}" type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`,
+    `<script id="${schemaIds[index] || `home-schema-${index}`}" type="application/ld+json">\n${sanitizeClaims(JSON.stringify(schema, null, 2))}\n</script>`,
   ).join("\n");
   const withSchemas = next.replace("</head>", `${schemas}\n</head>`);
 
   // Keep one visible homepage H1 in the response HTML. It lives outside
   // #root so React can mount cleanly, then the small bridge below hides the
   // static copy after hydration.
-  const homeStatic = generateFullHomepageStaticContent() + homeSeoLinksNoscript();
+  const homeStatic = sanitizeClaims(generateFullHomepageStaticContent() + homeSeoLinksNoscript());
   const withHomeStatic = withSchemas.replace(
     /<body([^>]*)>/i,
     `<body$1>\n  <div id="seo-static-page-content" class="seo-crawler-content">\n    ${homeStatic}\n  </div>`,
@@ -939,7 +986,7 @@ for (const svc of services) {
   const slug      = svc.seo_slug;
   const canonical = `${SITE_URL}/services/${encodeURIComponent(slug)}`;
   const title     = svc.seo_title || `${svc.title} | ${siteCompanyName}`;
-  const desc      = svc.seo_description || svc.description?.substring(0, 160) || "";
+   const desc      = sanitizeClaims(svc.seo_description || svc.description?.substring(0, 160) || "");
 
   let ogImage = svc.image_url || "";
   try { const imgs = JSON.parse(svc.images || "[]"); ogImage = imgs[0] || ogImage; } catch {}
@@ -969,14 +1016,14 @@ for (const svc of services) {
 
   const crumbs = [
     { name: "الرئيسية", url: SITE_URL },
-    { name: "خدماتنا",  url: `${SITE_URL}/#services` },
+     { name: "خدماتنا",  url: `${SITE_URL}/services` },
     { name: svc.title,  url: canonical }
   ];
 
   const serviceFaqs = [
-    { q: `ما هي مدة تنفيذ خدمة ${svc.title} في الرياض؟`, a: `تستغرق الخدمة في المتوسط من ساعتين إلى 6 ساعات حسب مساحة العقار وحجم العمل المطلوب، مع إمكانية توفير فريق عمل مضاعف للإنجاز في نفس اليوم.` },
-    { q: `هل تقدمون ضماناً على خدمة ${svc.title}؟`, a: `نعم، نقدم ضماناً كاملاً على جودة التنفيذ، مع استعداد تام لمعاينة أي ملاحظات وإعادة العمل فوراً وبدون أي تكلفة إضافية.` },
-    { q: `هل توفرون مواد ومعدات ${svc.title} بالكامل؟`, a: `نعم، يحضر فريق العمل مجهزاً بكافة ماكينات التنظيف والمواد والمنظفات المعتمدة والآمنة والمطابقة للمواصفات.` }
+    { q: `كيف يتم تحديد مدة تنفيذ خدمة ${svc.title} في الرياض؟`, a: `تتحدد مدة التنفيذ بعد معرفة مساحة العقار وحجم العمل ونطاق الخدمة المطلوب، ويؤكدها فريق خدمة العملاء عند تنسيق الموعد.` },
+    { q: `كيف تتم متابعة الملاحظات على خدمة ${svc.title}؟`, a: `يُراجع نطاق العمل مع العميل قبل التنفيذ، ويمكن تسجيل أي ملاحظة عبر قنوات التواصل لمناقشتها وفق تفاصيل الطلب.` },
+    { q: `هل تشمل خدمة ${svc.title} المواد والمعدات؟`, a: `تُحدد الأدوات والمواد المطلوبة حسب نوع الخدمة والسطح وحالة الموقع، وتوضح التفاصيل عند تأكيد نطاق العمل.` }
   ];
 
   const serviceFaqSchema = {
@@ -995,9 +1042,9 @@ for (const svc of services) {
   const bodyContent = `
     <div itemscope itemtype="https://schema.org/Service" style="max-width:900px;margin:0 auto">
       <div style="background:#fef3c7;border-right:4px solid #f59e0b;padding:16px 20px;border-radius:12px;margin-bottom:24px">
-        <strong style="color:#92400e;display:block;font-size:16px;margin-bottom:4px">⚡ إجابة مباشرة وملخص الخدمة (Quick Facts):</strong>
+      <strong style="color:#92400e;display:block;font-size:16px;margin-bottom:4px">ملخص الخدمة:</strong>
         <p style="margin:0;color:#78350f;font-size:15px;line-height:1.7">
-          تقدم <strong>${esc(siteCompanyName)}</strong> خدمة <strong>${esc(svc.title)}</strong> في جميع أحياء الرياض بأحدث المعدات وفريق فني متخصص. تشمل الخدمة المعاينة الفورية، التنفيذ الدقيق، التعقيم الشامل، وضمان الجودة المعتمد.
+           تقدم <strong>${esc(siteCompanyName)}</strong> خدمة <strong>${esc(svc.title)}</strong> في الأحياء المدرجة بالرياض. يحدد الفريق نطاق العمل والأدوات المناسبة بعد مراجعة نوع الموقع وتفاصيل الطلب.
         </p>
       </div>
 
@@ -1094,7 +1141,6 @@ try {
            seo_slug, seo_title, seo_description, seo_keywords
     FROM packages
     WHERE is_active = 1 AND seo_enabled = 1
-      AND seo_slug IS NOT NULL AND seo_slug != ''
     ORDER BY "order" ASC
   `).all();
 } catch (e) {
@@ -1104,7 +1150,6 @@ try {
            seo_slug, seo_title, seo_description, seo_keywords
     FROM containers
     WHERE is_active = 1 AND seo_enabled = 1
-      AND seo_slug IS NOT NULL AND seo_slug != ''
     ORDER BY "order" ASC
   `).all();
 }
@@ -1112,10 +1157,12 @@ try {
 console.log(`\n📦 إنشاء ${containers.length} صفحة باقات نظافة...`);
 
 for (const c of containers) {
-  const slug      = c.seo_slug;
+  const slug      = packageRouteSlug(c);
+  if (!slug) continue;
+  const sourceSlug = c.seo_slug;
   const canonical = `${SITE_URL}/cleaning-packages/${encodeURIComponent(slug)}`;
   const title     = c.seo_title || `${c.name} بالرياض | ${siteCompanyName}`;
-  const desc      = c.seo_description || c.description?.substring(0, 160) || "";
+     const desc      = sanitizeClaims(c.seo_description || c.description?.substring(0, 160) || "");
   const ogImage   = c.image_url || `${SITE_URL}/images/service-apartments.jpg`;
 
   let featuresList = [];
@@ -1142,29 +1189,27 @@ for (const c of containers) {
 
   const containerSchema = {
     "@context": "https://schema.org",
-    "@type": "Product",
+     "@type": "Service",
     "name": c.name,
     "description": desc,
     "image": absoluteImg(ogImage),
     "url": canonical,
     "inLanguage": "ar",
-    "category": catArabic,
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "SAR",
-      "availability": "https://schema.org/InStock",
-      "description": "طلب عرض سعر مجاني وفوري حسب تفاصيل ومساحة العقار"
-    },
-    "brand": {
-      "@type": "Brand",
-      "name": siteCompanyName
-    }
+     "category": catArabic,
+     "serviceType": catArabic,
+     "provider": {
+       "@type": "LocalBusiness",
+       "@id": `${publicUrl("/") }#business`,
+       "name": siteCompanyName,
+       "telephone": sitePhones.map(toInternational),
+       "address": buildAddressSchema()
+     },
+     "areaServed": { "@type": "City", "name": "الرياض" }
   };
 
   const crumbs = [
     { name: "الرئيسية", url: SITE_URL },
-    { name: "باقات التنظيف", url: `${SITE_URL}/#cleaning-packages` },
+     { name: "باقات التنظيف", url: `${SITE_URL}/cleaning-packages` },
     { name: c.name, url: canonical }
   ];
 
@@ -1184,25 +1229,38 @@ for (const c of containers) {
         ${esc(c.name)}
       </h1>
       ${ogImage ? `<img src="${esc(absoluteImg(ogImage))}" alt="${esc(c.name)}" style="width:100%;max-height:360px;object-fit:cover;border-radius:12px;margin-bottom:20px" loading="eager" />` : ""}
-      <p style="font-size:17px;color:#4a5568;line-height:1.8">
-        ${esc(c.description || desc)}
-      </p>
+       ${c.size || c.capacity || c.suitable_for ? `
+       <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px">
+         ${c.size ? `<span style="padding:5px 10px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#4a5568">الحجم: ${esc(c.size)}</span>` : ""}
+         ${c.capacity ? `<span style="padding:5px 10px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#4a5568">السعة: ${esc(c.capacity)}</span>` : ""}
+         ${c.suitable_for ? `<span style="padding:5px 10px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#4a5568">مناسبة لـ: ${esc(c.suitable_for)}</span>` : ""}
+       </div>` : ""}
+       <p style="font-size:17px;color:#4a5568;line-height:1.8">
+         ${esc(sanitizeClaims(c.description || desc))}
+       </p>
       ${featuresHtml}
-      <div style="margin-top:24px;padding:20px;background:#f0fff4;border-radius:12px;border-right:4px solid #38a169">
-        <p style="margin:0;font-size:16px;color:#22543d;font-weight:700">
-          💰 السعر: طلب عرض سعر مجاني وفوري حسب عدد الغرف والمساحة
-        </p>
-      </div>
-      <div style="margin-top:24px;padding:20px;background:#fef9e7;border-radius:12px;border-right:4px solid #f6c90e">
+       <div style="margin-top:24px;padding:20px;background:#ebf8ff;border-radius:12px;border-right:4px solid #3182ce">
+         <p style="margin:0 0 8px;font-size:17px;color:#2b6cb0;font-weight:800">
+           اطلب عرضاً مناسباً لتفاصيل الموقع
+         </p>
+         <p style="margin:0 0 14px;font-size:15px;color:#4a5568">
+           نحتاج إلى معرفة نوع العقار والحجم والكمية ونطاق العمل قبل تأكيد التفاصيل.
+         </p>
+         <div style="display:flex;gap:10px;flex-wrap:wrap">
+           ${sitePhoneWhatsapp ? `<a href="${esc(waLink(sitePhoneWhatsapp, `أرغب في الاستفسار عن ${c.name}`))}" style="background:#25d366;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:700">تواصل عبر واتساب</a>` : ""}
+           ${sitePhoneCall ? `<a href="tel:${esc(toInternational(sitePhoneCall))}" style="background:#2b6cb0;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:700">اتصال مباشر</a>` : ""}
+         </div>
+       </div>
+       <div style="margin-top:16px;padding:16px;background:#fef9e7;border-radius:12px;border-right:4px solid #f6c90e">
         <p style="margin:0;font-size:15px;color:#744210">
-          ${sitePhoneText ? `📞 للحجز والاستفسار: <strong>${esc(sitePhoneText)}</strong>` : "للحجز تواصل عبر بيانات الموقع."}
+           ${sitePhoneText ? `للاستفسار: <strong>${esc(sitePhoneText)}</strong>` : "للاستفسار تواصل عبر بيانات الموقع."}
         </p>
       </div>
     </div>`;
 
   const html = renderPage({
     title, description: desc, canonical, ogImage,
-    ogType: "product",
+     ogType: "website",
     keywords: c.seo_keywords || "",
     schemas: [containerSchema, breadcrumbSchema(crumbs)],
     breadcrumbs: crumbs,
@@ -1210,6 +1268,9 @@ for (const c of containers) {
   });
 
   savePage(`cleaning-packages/${slug}`, html);
+  if (sourceSlug && sourceSlug !== slug) {
+    savePage(`cleaning-packages/${sourceSlug}`, html);
+  }
 }
 console.log(`   ✅ ${containers.length} باقة نظافة`);
 
@@ -1280,7 +1341,7 @@ for (const page of seoPages) {
 
   const primaryCallout = primaryServiceUrl ? `
     <div style="margin-bottom:24px;padding:16px 20px;background:#ebf4ff;border-radius:10px;border-right:4px solid #3182ce;font-size:15px;color:#2b6cb0">
-      📌 هذه الصفحة تتبع قسم <strong><a href="${primaryServiceUrl}" style="color:#2b6cb0;text-decoration:underline">${primaryServiceName}</a></strong>. يمكنك الاطلاع على الأسعار المحدثة وحجز الخدمة المباشرة من الصفحة الرئيسية للخدمة.
+      هذه الصفحة تتبع قسم <strong><a href="${primaryServiceUrl}" style="color:#2b6cb0;text-decoration:underline">${primaryServiceName}</a></strong>. يمكنك الاطلاع على تفاصيل الخدمة وطلب العرض من الصفحة الرئيسية للخدمة.
     </div>` : "";
 
   const bodyContent = `
@@ -1294,7 +1355,7 @@ for (const page of seoPages) {
       </div>
       <div style="margin-top:32px;padding:20px;background:#ebf8ff;border-radius:12px;border-right:4px solid #3182ce">
         <p style="font-size:18px;font-weight:700;color:#2b6cb0;margin:0 0 8px">اطلب الخدمة الآن في الرياض</p>
-        <p style="font-size:15px;color:#4a5568;margin:0 0 16px">اتصل بنا للحصول على معاينة مجانية وعرض سعر فوري ومباشر.</p>
+        <p style="font-size:15px;color:#4a5568;margin:0 0 16px">اتصل بنا لتوضيح تفاصيل الطلب وتنسيق الموعد المناسب.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <a href="tel:${esc(sitePhoneCall)}" style="background:#2b6cb0;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">📞 ${esc(sitePhoneCall)}</a>
           <a href="${waLink(sitePhoneWhatsapp, `طلب خدمة بخصوص: ${page.title}`)}" style="background:#25d366;color:white;padding:10px 20px;border-radius:8px;font-weight:700;text-decoration:none">واتساب ↗</a>
@@ -1601,14 +1662,14 @@ if (false) {
   const canonical = `${SITE_URL}/cleaning-packages`;
   const title = `باقات التنظيف بالرياض | ${siteCompanyName}`;
   const description = `اختر باقة التنظيف المناسبة لمنزلك أو منشأتك في الرياض من باقات ${siteCompanyName}، مع تنسيق سريع وتأكيد واضح للموعد.`;
-  const active = containers.filter(c => c.isActive !== false && (c.seoSlug || c.slug));
-  const items = active.map(c => `<li><a href="/cleaning-packages/${encodeURIComponent(c.seoSlug || c.slug)}">${esc(c.name)}</a> — ${esc(c.description || "باقة تنظيف متخصصة بالرياض")}</li>`).join("");
+  const active = containers.filter(c => c.isActive !== false && packageRouteSlug(c));
+  const items = active.map(c => `<li><a href="/cleaning-packages/${encodeURIComponent(packageRouteSlug(c))}">${esc(c.name)}</a> — ${esc(c.description || "باقة تنظيف متخصصة بالرياض")}</li>`).join("");
   const schema = {
     "@context": "https://schema.org", "@type": "CollectionPage", name: title,
     description, url: canonical, inLanguage: "ar",
     mainEntity: { "@type": "ItemList", itemListElement: active.map((c, index) => ({
       "@type": "ListItem", position: index + 1, name: c.name,
-      url: `${SITE_URL}/cleaning-packages/${encodeURIComponent(c.seoSlug || c.slug)}`
+      url: `${SITE_URL}/cleaning-packages/${encodeURIComponent(packageRouteSlug(c))}`
     })) }
   };
   savePage("cleaning-packages", renderPage({

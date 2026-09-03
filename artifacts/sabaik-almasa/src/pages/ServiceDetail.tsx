@@ -82,6 +82,21 @@ function metaDescription(service: Service): string {
   return bodyDescription(service).slice(0, 160)
 }
 
+function sanitizeServiceText(value: string): string {
+  return value
+    .replace(/(?:تبدأ|يبدأ)\s+من\s+[\d,]+\s*(?:ر\.س|ريال)(?:\s*\/\s*(?:م²|للمكيف))?/g, "يُحدد بعد مراجعة تفاصيل الموقع")
+    .replace(/\d{1,3}\s*(?:—|-|إلى)\s*\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/\d{1,3}\s*دقيقة/g, "حسب الموعد والتوفر")
+    .replace(/(?:معاينة|عرض سعر|عروض أسعار)\s+(?:ميدانية\s+)?(?:ال)?مجاني(?:ة)?/g, "معاينة أو عرض حسب تفاصيل الطلب")
+    .replace(/ضمان(?:اً|ا)?\s+(?:كامل|شامل|معتمد)(?:اً|ا)?(?:\s+100%)?/g, "وفق نطاق العمل المتفق عليه")
+    .replace(/(?:أحدث|العالمية)\s+(?:المعدات|الأجهزة|ماكينات)/g, "الأدوات المناسبة")
+    .replace(/ماكينات إيطالية/g, "معدات مناسبة")
+    .replace(/(?:مصرحة|معتمدة|مطابقة للاشتراطات الصحية)/g, "مناسبة للاستخدام")
+    .replace(/\b(?:140°|150 بار|3000 واط)\b/g, "حسب نوع الخدمة")
+    .replace(/(?:تغطية كاملة لكافة|تغطية شاملة لجميع|جميع أحياء)\s+(?:أحياء ومناطق\s+)?الرياض/g, "الأحياء المدرجة في الرياض")
+    .replace(/(?:وصول سريع|استجابة فورية|حجز فوري|عرض سعر فوري|اتصال فوري|تسليم فوري|تعقيم فوري|تجفيف فوري)/g, "تنسيق حسب الموعد")
+}
+
 // ── بيانات تفصيلية مساعدة لصفحات الخدمات ─────────────────────────────────────
 const DEFAULT_SERVICE_INTEL = {
   equipment: ["أدوات تنظيف احترافية", "مواد مناسبة للأسطح المختلفة", "معدات بخار وتعقيم عند الحاجة", "معدات حماية للمفروشات والأرضيات"],
@@ -127,8 +142,8 @@ export default function ServiceDetail() {
     [service],
   )
   const resolvedCompany = companyName || ""
-  const bodyText = service ? bodyDescription(service) : (companyName ? `تعرف على خدمات ${companyName} للتنظيف في الرياض.` : "تعرف على خدمات التنظيف الاحترافية في الرياض.")
-  const metaText = service ? metaDescription(service) : (companyName ? `خدمات تنظيف احترافية في الرياض من ${companyName} للمنازل والفلل والمكاتب.` : "خدمات تنظيف احترافية في الرياض للمنازل والفلل والمكاتب.")
+  const bodyText = service ? sanitizeServiceText(bodyDescription(service)) : (companyName ? `تعرف على خدمات ${companyName} للتنظيف في الرياض.` : "تعرف على خدمات التنظيف الاحترافية في الرياض.")
+  const metaText = service ? sanitizeServiceText(metaDescription(service)) : (companyName ? `خدمات تنظيف احترافية في الرياض من ${companyName} للمنازل والفلل والمكاتب.` : "خدمات تنظيف احترافية في الرياض للمنازل والفلل والمكاتب.")
   const title = service ? (companyName ? `${service.seoTitle?.trim() || service.title} | ${companyName}` : (service.seoTitle?.trim() || service.title)) : (companyName ? `خدمات التنظيف بالرياض | ${companyName}` : "خدمات التنظيف بالرياض")
   const canonical = siteUrl(`/services/${encodeURIComponent(slug)}`)
 
@@ -156,7 +171,7 @@ export default function ServiceDetail() {
           "provider": {
             "@type": "LocalBusiness",
             "name": resolvedCompany,
-            "telephone": "+966554498403",
+          "telephone": `+966${(phoneCall || "0554498403").replace(/[^\d]/g, "").replace(/^0/, "")}`,
             "address": {
               "@type": "PostalAddress",
               "streetAddress": "طريق الملك فهد، حي الصحافة",
@@ -193,7 +208,7 @@ export default function ServiceDetail() {
     return () => {
       document.getElementById(`service-schema-${service.id}`)?.remove()
     }
-  }, [service, metaText, resolvedCompany, activeIntel])
+  }, [service, metaText, resolvedCompany, activeIntel, phoneCall])
 
   const waHref = `https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن خدمة ${service?.title || "الباقات التنظيف"}`)}`
 
@@ -233,20 +248,20 @@ export default function ServiceDetail() {
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <Link href="/" className="hover:text-white transition-colors">الرئيسية</Link>
             <ChevronLeft size={14} />
-            <Link href="/#services" className="hover:text-white transition-colors">الخدمات</Link>
+            <Link href="/services" className="hover:text-white transition-colors">الخدمات</Link>
             <ChevronLeft size={14} />
             <span className="text-secondary font-semibold">{service.title}</span>
           </div>
 
           <div className="max-w-3xl">
             <span className="inline-block bg-secondary/20 text-secondary border border-secondary/30 px-3 py-1 rounded-full text-xs font-bold mb-3">
-              خدمة معتمدة في كافة أحياء الرياض
+              خدمة تنظيف في الرياض حسب نطاق التغطية
             </span>
             <h1 className="text-3xl md:text-5xl font-black leading-tight text-white mb-4">
               {service.title}
             </h1>
             <p className="text-slate-200 text-base md:text-lg leading-relaxed mb-6">
-              {service.description}
+              {sanitizeServiceText(service.description || bodyText)}
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -262,7 +277,7 @@ export default function ServiceDetail() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg text-sm"
               >
-                <MessageCircle size={16} /> واتساب فوري
+                <MessageCircle size={16} /> تواصل عبر واتساب
               </a>
             </div>
           </div>
@@ -300,11 +315,11 @@ export default function ServiceDetail() {
                 <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100">
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
                     <ShieldCheck className="text-primary" size={24} />
-                    <span className="text-xs font-bold text-slate-800">تصاريح رسمية من أمانة الرياض</span>
+                    <span className="text-xs font-bold text-slate-800">نطاق عمل واضح قبل التنفيذ</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
                     <Clock className="text-secondary" size={24} />
-                    <span className="text-xs font-bold text-slate-800">توصيل وسحب خلال ساعتين 24/7</span>
+                     <span className="text-xs font-bold text-slate-800">تنسيق الموعد حسب التوفر</span>
                   </div>
                 </div>
               </div>
@@ -382,7 +397,7 @@ export default function ServiceDetail() {
               <div className="bg-gradient-to-br from-primary to-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
                 <h3 className="text-xl font-bold text-white">طلب الخدمة فوراً</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  تواصل معنا هاتفياً أو عبر واتساب لحجز الباقة التنظيف أو تحديد موعد المعاينة.
+                  تواصل معنا هاتفياً أو عبر واتساب لطلب الخدمة أو تحديد موعد المعاينة.
                 </p>
                 <div className="space-y-2 pt-2">
                   <a

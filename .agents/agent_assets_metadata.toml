@@ -14,3 +14,17 @@ mtime_ms = 1787792173666
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:c1070138-93d4-4bab-bda5-e5a67654ce67/e70cc730-6981-44b8-bcb6-69db50831df9/7dcc0d8e-09bc-4548-8e67-008b704d24b6"
 storage_version_token = "1787792190661220"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "_wYwkOC0oFA97wwkft3xK"
+uri = "file://cleanflow-services-hostinger.zip"
+type = "unspecified"
+title = "CleanFlow Services — Hostinger package"
+description = "Final Hostinger archive with prerendered SEO pages, aligned sitemap routes, and the latest package slug compatibility fix."
+logical_id = "d606af0c-74ed-4026-8e57-dcf7ce3c2d0b"
+content_hash = "sha256:efec2e15d3fa3ca1727673ada2bd78d93312cfe9760a2b63d4700628ff8d302e"
+size = 8501066
+mtime_ms = 1788421353850
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:b68aaf5e-1ea6-4476-924c-05686fef6445/d606af0c-74ed-4026-8e57-dcf7ce3c2d0b/0bfe7ada-3bea-4bf2-9b45-3bc13aacaf68"
+storage_version_token = "1788421403733229"
+content_type = "application/octet-stream"

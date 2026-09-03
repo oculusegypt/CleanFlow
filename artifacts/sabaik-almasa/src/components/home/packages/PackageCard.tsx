@@ -4,6 +4,7 @@ import { Check, Maximize, Weight, Info, Clock, Phone, MessageCircle, Timer, Arro
 import { Link } from "wouter"
 import { resolveContactNumbers, useSiteSettings } from "@/context/SiteSettingsContext"
 import { resolvePackageImageUrl } from "@/lib/packageImage"
+import { getPackageRouteSlug } from "@/lib/packageRoute"
 
 export interface PackageCardProps {
   container: CleaningPackage
@@ -241,7 +242,7 @@ export function PackageCard({ container: c, onRequest }: PackageCardProps) {
             "اطلب هذه الباقة الآن ←"
           </button>
           <Link
-            href={`/cleaning-packages/${String((c as CleaningPackage & { seoSlug?: string }).seoSlug || c.name)}`}
+            href={`/cleaning-packages/${encodeURIComponent(getPackageRouteSlug(c))}`}
             className="flex items-center justify-center gap-1.5 text-sm font-bold text-primary hover:text-secondary transition-colors"
           >
             <span>تفاصيل الباقة</span>
