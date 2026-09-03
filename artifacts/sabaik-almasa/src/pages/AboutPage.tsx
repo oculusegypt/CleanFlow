@@ -12,16 +12,16 @@ import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function AboutPage() {
   const { companyName, phoneCall, phoneWhatsapp } = useSiteSettings()
-  const resolvedCompany = companyName || "خدمات تأجير الباقات التنظيف"
+  const resolvedCompany = companyName || "خدمات التنظيف"
 
   useDocumentSEO({
-    title: companyName ? `من نحن — ${companyName} لتأجير الباقات التنظيف ونقل الأنقاض بالرياض` : "من نحن — خدمات تأجير الباقات التنظيف ونقل الأنقاض بالرياض | خبرة وضمان",
-    description: `المؤسسة الرائدة والمتخصصة في تأجير باقات التنظيف الأنقاض والنفايات والمكابس وعقود النظافة الإلكترونية بالرياض. أسطول حديث، تصاريح رسمية، وتوصيل فوري 24/7.`,
-    keywords: `من نحن, تأجير باقات التنظيف بالرياض, باقات التنظيف أنقاض بالرياض, باقات التنظيف نفايات بالرياض, عقود نظافة إلكترونية`,
+    title: companyName ? `من نحن — ${companyName} لخدمات التنظيف بالرياض` : "من نحن — خدمات التنظيف بالرياض | خبرة وعناية",
+    description: `تعرف على مؤسسة تنظيف محلية في الرياض تقدم خدمات العناية بالمنازل والفلل والمكاتب والمنشآت بفريق مدرب واهتمام بالتفاصيل.`,
+    keywords: `من نحن, شركة تنظيف بالرياض, تنظيف منازل وفلل, تنظيف مكاتب`,
     canonical: siteUrl("/about"),
   })
 
-  const waHref = `https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("مرحباً، أود الاستفسار عن تأجير الباقات التنظيف والتعاقد")}`
+  const waHref = `https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("مرحباً، أود الاستفسار عن خدمات التنظيف")}`
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans" dir="rtl">
@@ -39,7 +39,7 @@ export default function AboutPage() {
             عن {resolvedCompany}
           </h1>
           <p className="text-slate-200 text-lg md:text-xl max-w-3xl leading-relaxed">
-            المؤسسة الرائدة في تقديم حلول إدارة وتأجير الباقات التنظيف، نقل مخلفات البناء والهدم، تأجير مكابس النفايات للمنشآت والمجمعات، وعقود النظافة الإلكترونية المعتمدة في مدينة الرياض.
+            نقدم خدمات تنظيف عملية للمنازل والفلل والشقق والمكاتب والمنشآت في الرياض، مع تنسيق واضح وعناية بالمكان من بداية الطلب حتى التسليم.
           </p>
         </div>
       </div>
@@ -54,8 +54,8 @@ export default function AboutPage() {
                   <ShieldCheck size={28} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base mb-1">عقود وتراخيص معتمدة</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">عقود رسمية معتمدة من أمانة منطقة الرياض ومنصة بلدي لتجديد رخص الأنشطة.</p>
+                  <h3 className="font-bold text-slate-900 text-base mb-1">تنظيف منظم وآمن</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">نرتب خطوات العمل ونستخدم أدوات ومواد مناسبة لطبيعة كل مساحة.</p>
                 </div>
               </div>
 
@@ -64,8 +64,8 @@ export default function AboutPage() {
                   <Award size={28} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base mb-1">باقات التنظيف متينة بجميع المقاسات</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">باقات التنظيف أنقاض من 12 إلى 30 ياردة وباقات التنظيف نفايات ومكابس كهربائية حديثة.</p>
+                  <h3 className="font-bold text-slate-900 text-base mb-1">خدمات مرنة</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">ننسق نطاق التنظيف وموعده حسب نوع العقار والمساحة واحتياج العميل.</p>
                 </div>
               </div>
 

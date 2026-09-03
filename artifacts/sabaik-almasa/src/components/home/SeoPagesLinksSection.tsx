@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, BookOpen, Layers, Box } from "lucide-react"
+import { ArrowLeft, BookOpen, Layers } from "lucide-react"
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
 
@@ -47,10 +47,9 @@ export function SeoPagesLinksSection() {
   const categories = useMemo(() => {
     return [
       { id: "all", label: "جميع الصفحات والأدلة" },
-      { id: "debris", label: "باقات التنظيف الأنقاض ومخلفات البناء" },
-      { id: "waste", label: "باقات التنظيف النفايات والمكابس" },
-      { id: "contracts", label: "عقود النظافة وتجديد الرخص" },
-      { id: "earthwork", label: "ردم وتسوية الأراضي" },
+      { id: "home", label: "تنظيف المنازل والفلل" },
+      { id: "specialized", label: "التنظيف المتخصص" },
+      { id: "commercial", label: "تنظيف المنشآت والمكاتب" },
     ]
   }, [])
 
@@ -58,10 +57,9 @@ export function SeoPagesLinksSection() {
     if (activeTab === "all") return pages
     return pages.filter(p => {
       const text = (p.title + " " + p.slug + " " + (p.targetKeyword || "")).toLowerCase()
-      if (activeTab === "debris") return text.includes("أنقاض") || text.includes("هدم") || text.includes("بناء") || text.includes("مخلفات") || text.includes("ترميم")
-      if (activeTab === "waste") return text.includes("نفايات") || text.includes("مكبس") || text.includes("مطاعم") || text.includes("محلات")
-      if (activeTab === "contracts") return text.includes("عقد") || text.includes("بلدي") || text.includes("رخص") || text.includes("أمانة")
-      if (activeTab === "earthwork") return text.includes("ردم") || text.includes("تسوية") || text.includes("أراضي") || text.includes("معدات")
+      if (activeTab === "home") return text.includes("منزل") || text.includes("شقق") || text.includes("فلل") || text.includes("قصور")
+      if (activeTab === "specialized") return text.includes("رخام") || text.includes("مكيف") || text.includes("حشرات") || text.includes("خزانات") || text.includes("مجالس")
+      if (activeTab === "commercial") return text.includes("مكاتب") || text.includes("محلات") || text.includes("منشآت") || text.includes("مدارس")
       return true
     })
   }, [pages, activeTab])
@@ -80,13 +78,13 @@ export function SeoPagesLinksSection() {
         >
           <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-xs md:text-sm font-bold text-primary">
             <Layers size={15} />
-            فهرس خدمات وأدلة تأجير الباقات التنظيف بالرياض
+            فهرس خدمات وأدلة التنظيف بالرياض
           </span>
           <h2 id="seo-directory-heading" className="mb-3 text-2xl font-black text-slate-900 md:text-4xl">
-            دليل صفحات الباقات التنظيف وإدارة المخلفات بالرياض
+            دليل خدمات التنظيف والعناية بالمكان
           </h2>
           <p className="text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            فهرس شامل للأدلة والصفحات التخصصية لتأجير الباقات التنظيف ونقل الأنقاض والمخلفات وتجديد الرخص في مدينة الرياض.
+            فهرس عملي للأدلة والصفحات التخصصية التي تساعدك على اختيار خدمة التنظيف المناسبة في الرياض.
           </p>
 
           {/* Category filter pills */}

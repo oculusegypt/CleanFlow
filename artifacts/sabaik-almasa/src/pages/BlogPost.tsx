@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer"
 import {
   Calendar, Clock, Eye, Tag, ChevronRight, Share2,
   Facebook, Twitter, Link2, BookOpen, ArrowRight, Loader2,
-  Phone, MessageCircle, Truck, Package
+  Phone, MessageCircle, Sparkles
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useServiceRequest } from "@/context/ServiceRequestContext"
@@ -43,7 +43,7 @@ function setMeta(name: string, content: string, attr = "name") {
 // ─── CTA Block ─────────────────────────────────────────────────────────────────
 function ArticleCTA({ onOpen, phoneCall, phoneWhatsapp, postTitle }: { onOpen: () => void; phoneCall: string; phoneWhatsapp: string; postTitle: string }) {
   const waHref = phoneWhatsapp
-    ? `https://wa.me/966${phoneWhatsapp.replace(/^0/, "")}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن تأجير الباقات التنظيف من مقال: ${postTitle}`)}`
+    ? `https://wa.me/966${phoneWhatsapp.replace(/^0/, "")}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن خدمات التنظيف من مقال: ${postTitle}`)}`
     : ""
 
   return (
@@ -51,14 +51,14 @@ function ArticleCTA({ onOpen, phoneCall, phoneWhatsapp, postTitle }: { onOpen: (
       <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
         {/* Icon */}
         <div className="shrink-0 w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
-          <Truck size={30} className="text-white" />
+          <Sparkles size={30} className="text-white" />
         </div>
 
         {/* Text */}
         <div className="flex-1 text-center md:text-right">
-          <h3 className="text-xl font-black text-gray-900 mb-1">هل تحتاج باقة التنظيف لمشروعك أو عقارك بالرياض؟</h3>
+          <h3 className="text-xl font-black text-gray-900 mb-1">هل تحتاج خدمة تنظيف لعقارك في الرياض؟</h3>
           <p className="text-gray-600 text-sm leading-relaxed">
-            توصيل وسحب فوري لجميع أحياء الرياض خلال ساعتين مع التفريغ النظامي في المرادم الرسمية.
+            تواصل معنا لنفهم احتياجك ونقترح لك الخدمة والموعد المناسبين.
           </p>
         </div>
 
@@ -68,8 +68,8 @@ function ArticleCTA({ onOpen, phoneCall, phoneWhatsapp, postTitle }: { onOpen: (
             onClick={() => onOpen()}
             className="inline-flex items-center gap-2 bg-secondary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:bg-primary hover:text-white transition-all"
           >
-            <Package size={16} />
-            اطلب الباقة التنظيف الآن
+            <Sparkles size={16} />
+            اطلب خدمة تنظيف الآن
           </button>
           {waHref && (
             <a
@@ -98,9 +98,9 @@ function ArticleCTA({ onOpen, phoneCall, phoneWhatsapp, postTitle }: { onOpen: (
 // ─── CleaningPackage Packages CTA at article end ────────────────────────────────────────────
 function ArticleCleaningPackages({ onOpen }: { onOpen: (size?: string) => void }) {
   const containers = [
-    { name: "باقة التنظيف أنقاض صغيرة", size: "12 ياردة", price: "400 ر.س", img: "/api/uploads/container-debris-small.webp", best: "للترميمات والتعديلات" },
-    { name: "باقة التنظيف أنقاض كبيرة", size: "20 ياردة", price: "500 ر.س", img: "/api/uploads/container-debris-large.webp", best: "لبناء وهدم الفلل والعمائر" },
-    { name: "باقة التنظيف أنقاض جامبو", size: "30 ياردة", price: "700 ر.س", img: "/api/uploads/container-debris-jumbo.webp", best: "للمشاريع الكبرى والهدم الشامل" },
+    { name: "تنظيف شقة أو منزل", size: "حسب المساحة", price: "عرض مخصص", img: "/images/service-apartments.jpg", best: "للتنظيف العام والعميق" },
+    { name: "تنظيف فلل وقصور", size: "حسب المساحة", price: "عرض مخصص", img: "/images/service-villas.jpg", best: "للمساحات متعددة الأدوار" },
+    { name: "غسيل مجالس وكنب بالبخار", size: "حسب القطع", price: "عرض مخصص", img: "/images/service-majlis.jpg", best: "للمفروشات والمجالس" },
   ]
 
   return (
@@ -117,7 +117,7 @@ function ArticleCleaningPackages({ onOpen }: { onOpen: (size?: string) => void }
                 src={c.img}
                 alt={c.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => { e.currentTarget.src = "/api/uploads/container-debris-small.webp" }}
+                onError={(e) => { e.currentTarget.src = "/images/service-apartments.jpg" }}
               />
             </div>
             <div className="p-4 flex-1 flex flex-col justify-between">
@@ -231,7 +231,7 @@ export default function BlogPost() {
 
         // ── Inject SEO meta tags ──────────────────────────────────────────
         const canonical = siteUrl(sitePath(d.canonicalUrl || `/blog/${d.slug}`))
-        const ogImg     = siteUrl(sitePath(d.ogImage || d.coverImage || "/logo.webp"))
+        const ogImg     = siteUrl(sitePath(d.ogImage || d.coverImage || "/brand-icon.png"))
         const title     = d.seoTitle || d.title
         const desc      = d.seoDescription || d.excerpt
 
@@ -291,7 +291,7 @@ export default function BlogPost() {
             "publisher": {
               "@type": "Organization",
               "name": companyName,
-              "logo": { "@type": "ImageObject", "url": siteUrl("/logo.webp") },
+              "logo": { "@type": "ImageObject", "url": siteUrl("/brand-icon.png") },
               "telephone": phoneCall ? `+966${phoneCall.replace(/^0/, "")}` : undefined,
               "areaServed": "الرياض",
             },
@@ -478,7 +478,7 @@ export default function BlogPost() {
           {/* ── CTA Block ── */}
           <ArticleCTA onOpen={() => openModal()} phoneCall={phoneCall} phoneWhatsapp={phoneWhatsapp} postTitle={resolvedPost.title} />
 
-          {/* ── CleaningPackages at end of article ── */}
+          {/* ── Cleaning packages at end of article ── */}
           <ArticleCleaningPackages onOpen={(size) => openModal(size ? { packageSize: size } : undefined)} />
 
           {/* Footer of article */}

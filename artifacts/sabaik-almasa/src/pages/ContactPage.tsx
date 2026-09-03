@@ -17,9 +17,9 @@ export default function ContactPage() {
   const wa2Href = `https://wa.me/966${(secondaryWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("مرحباً، أود الاستفسار عن خدمات الباقات التنظيف")}`
 
   useDocumentSEO({
-    title: companyName ? `تواصل معنا — ${companyName} لتأجير الباقات التنظيف | الرياض` : "تواصل معنا — تأجير الباقات التنظيف بالرياض",
-    description: `تواصل لحجز وتأجير باقات التنظيف الأنقاض والنفايات وعقود النظافة الإلكترونية بالرياض. اتصل بنا على ${phoneWhatsapp || phoneCall} أو عبر واتساب.`,
-    keywords: "تواصل تأجير الباقات التنظيف, رقم تأجير باقات التنظيف بالرياض, هاتف باقات التنظيف أنقاض بالرياض",
+    title: companyName ? `تواصل معنا — ${companyName} لخدمات التنظيف | الرياض` : "تواصل معنا — خدمات التنظيف بالرياض",
+    description: `تواصل لحجز خدمات تنظيف المنازل والفلل والمكاتب والمنشآت بالرياض. اتصل بنا على ${phoneWhatsapp || phoneCall} أو عبر واتساب.`,
+    keywords: "تواصل شركة تنظيف, رقم شركة تنظيف بالرياض, حجز تنظيف منازل",
     canonical: siteUrl("/contact/"),
   })
 
@@ -59,7 +59,7 @@ export default function ContactPage() {
             <div className="w-14 h-14 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center">
               <MessageCircle size={26} />
             </div>
-            <h3 className="font-bold text-lg text-gray-900">واتساب — حجز وتأجير الباقات التنظيف</h3>
+            <h3 className="font-bold text-lg text-gray-900">واتساب — حجز خدمات التنظيف</h3>
             <p className="text-green-600 font-bold text-xl dir-ltr">{phoneWhatsapp || "0554498403"}</p>
             <span className="text-xs text-gray-500">إرسال الموقع وتحديد المقاس</span>
           </a>

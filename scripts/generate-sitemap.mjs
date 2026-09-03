@@ -39,7 +39,6 @@ const absoluteUrl = (value) => {
 const staticPages = [
   ["/", "1.0", "daily"],
   ["/about", "0.9", "monthly"],
-  ["/pricing", "0.95", "weekly"],
   ["/services", "0.95", "weekly"],
   ["/cleaning-packages", "0.95", "weekly"],
   ["/contact", "0.85", "monthly"],
@@ -55,6 +54,11 @@ const staticPages = [
   ["/why-us/accumulated-experience", "0.8", "monthly"],
   ["/blog", "0.9", "daily"],
 ];
+const staticImages = {
+  "/": ["/brand-icon.png", "/images/logo.png"],
+  "/about": ["/images/service-majlis.jpg"],
+  "/cleaning-packages": ["/images/service-apartments.jpg"],
+};
 
 const services = db.prepare(`
   SELECT title, seo_slug AS slug, images
@@ -114,7 +118,7 @@ const addEntry = ({ path, priority, changefreq, title, lastmod = today, images =
 };
 
 for (const [path, priority, changefreq] of staticPages) {
-  addEntry({ path, priority, changefreq, title: siteName });
+  addEntry({ path, priority, changefreq, title: siteName, images: staticImages[path] || [] });
 }
 
 const parseImages = (raw) => {

@@ -370,7 +370,7 @@ export default function Home() {
      const brandName = (companyName || "السهم كلين").replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
      document.title = companyName
        ? `${brandName} | خدمات تنظيف احترافية بالرياض`
-      : "تأجير باقات التنظيف مخلفات الأنقاض والنفايات بالرياض | توصيل وسحب فوري 24/7"
+      : "خدمات تنظيف المنازل والفلل والمكاتب بالرياض | حجز وتنسيق سريع"
     injectLocalBusinessSchema({
       companyName,
       description,

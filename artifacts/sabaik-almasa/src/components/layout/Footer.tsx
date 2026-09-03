@@ -37,7 +37,7 @@ export function Footer() {
             {siteSettings.isLoaded && siteSettings.logoUrl ? (
               <img src={siteSettings.logoUrl} alt={`شعار ${siteSettings.companyName}`} className="h-16 w-auto mb-4 object-contain" />
             ) : (
-              <h3 className="text-2xl font-bold text-white mb-4">{siteSettings.companyName || "تأجير الباقات التنظيف بالرياض"}</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">{siteSettings.companyName || "خدمات التنظيف بالرياض"}</h3>
             )}
              {description && <p className="text-gray-300 text-sm leading-relaxed">{description}</p>}
             <div className="pt-2" aria-label="حسابات التواصل الاجتماعي">
@@ -71,7 +71,7 @@ export function Footer() {
               <li><a href="/#containers" className="text-gray-300 hover:text-white transition-colors block">الباقات التنظيف المتاحة</a></li>
               <li><a href="/#services" className="text-gray-300 hover:text-white transition-colors block">خدماتنا</a></li>
               <li><Link href="/faq"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block font-semibold text-secondary">الأسئلة الشائعة (FAQ)</span></Link></li>
-              <li><Link href="/pricing"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">أسعار الباقات التنظيف</span></Link></li>
+              <li><Link href="/cleaning-packages"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">باقات التنظيف</span></Link></li>
               <li><Link href="/areas"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">تغطية أحياء الرياض</span></Link></li>
               <li><Link href="/blog"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">المدونة والمقالات</span></Link></li>
               <li><Link href="/contact"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block font-semibold text-secondary">اتصل بنا</span></Link></li>
@@ -84,13 +84,9 @@ export function Footer() {
               <span className="absolute bottom-0 right-0 w-1/2 h-1 bg-secondary rounded-full -mb-2"></span>
             </h3>
             <ul className="space-y-3">
-              <li><Link href="/pricing"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">أسعار تأجير الباقات التنظيف</span></Link></li>
-              <li><Link href="/packages/debris"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">باقات التنظيف الأنقاض (12 إلى 30 ياردة)</span></Link></li>
-              <li><Link href="/packages/waste"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">باقات التنظيف النفايات والمكابس للمنشآت</span></Link></li>
-              <li><Link href="/packages/contracts"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">عقود النظافة وتجديد الرخص</span></Link></li>
-              <li><Link href="/services/transport-rubble-waste-saudi"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">نقل وتفريغ مخلفات الهدم والبناء</span></Link></li>
-              <li><Link href="/services/raddm-taswiyat-al-ardi"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">ردم وتسوية الأراضي بالمعدات الثقيلة</span></Link></li>
-              <li><Link href="/services/cleaning-and-sanitizing-construction-sites"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">تنظيف وتطهير المواقع بعد الهدم</span></Link></li>
+              <li><Link href="/cleaning-packages"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">استعرض باقات التنظيف</span></Link></li>
+              <li><Link href="/services"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">جميع خدمات التنظيف</span></Link></li>
+              <li><Link href="/contact"><span className="text-gray-300 hover:text-white transition-colors cursor-pointer block">اطلب عرض خدمة مناسب</span></Link></li>
             </ul>
           </div>
 
@@ -152,7 +148,7 @@ export function Footer() {
 
         {/* Neighborhoods */}
         <div className="mb-10 pt-6 border-t border-white/10">
-          <h3 className="text-base font-bold mb-4 text-secondary">خدمات تأجير الباقات التنظيف في أحياء ومناطق الرياض</h3>
+          <h3 className="text-base font-bold mb-4 text-secondary">خدمات التنظيف في أحياء ومناطق الرياض</h3>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400">
             {[
               { href: "/areas",                      text: "كل مناطق الخدمة" },
@@ -189,7 +185,6 @@ export function Footer() {
             <Link href="/terms"><span className="hover:text-white cursor-pointer">الشروط والأحكام</span></Link>
             <Link href="/contact"><span className="hover:text-white cursor-pointer">اتصل بنا</span></Link>
             <Link href="/about"><span className="hover:text-white cursor-pointer">من نحن</span></Link>
-            <Link href="/pricing"><span className="hover:text-white cursor-pointer">الأسعار</span></Link>
             <Link href="/blog"><span className="hover:text-white cursor-pointer">المدونة</span></Link>
           </div>
         </div>

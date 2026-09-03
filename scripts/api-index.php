@@ -769,6 +769,27 @@ try {
     function generateSitemapXml(PDO $pdo, string $baseUrl): array {
         $today = date('Y-m-d');
         $baseUrl = CANONICAL_SITE_URL;
+        $xmlEscape = static function ($value): string {
+            return htmlspecialchars((string)$value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+        };
+        $parseImages = static function ($raw): array {
+            $decoded = json_decode((string)$raw, true);
+            if (!is_array($decoded)) return [];
+            return array_values(array_filter($decoded, static function ($value): bool {
+                return is_string($value) && trim($value) !== '';
+            }));
+        };
+        $appendImages = static function (array &$lines, $raw, string $title) use ($baseUrl, $xmlEscape, $parseImages): void {
+            foreach (array_slice($parseImages($raw), 0, 3) as $index => $image) {
+                $imageUrl = preg_match('#^https?://#i', $image)
+                    ? $image
+                    : $baseUrl . '/' . ltrim($image, '/');
+                $lines[] = '    <image:image>';
+                $lines[] = '      <image:loc>' . $xmlEscape($imageUrl) . '</image:loc>';
+                $lines[] = '      <image:title>' . $xmlEscape($title . ' — صورة ' . ((int)$index + 1)) . '</image:title>';
+                $lines[] = '    </image:image>';
+            }
+        };
 
         $neighborhoods = [
             'north-riyadh', 'al-malqa', 'al-yasmin', 'al-narjis', 'al-aarid', 'hittin', 'al-sahafa', 'al-nafal', 'al-aqiq', 'al-rabi', 'al-ghadeer', 'al-wadi', 'al-nada', 'al-falah',
@@ -781,7 +802,6 @@ try {
         $staticPages = [
             ['path' => '', 'priority' => '1.0', 'freq' => 'weekly'],
             ['path' => '/about', 'priority' => '0.9', 'freq' => 'monthly'],
-            ['path' => '/pricing', 'priority' => '0.95', 'freq' => 'monthly'],
             ['path' => '/services', 'priority' => '0.95', 'freq' => 'weekly'],
             ['path' => '/cleaning-packages', 'priority' => '0.95', 'freq' => 'weekly'],
             ['path' => '/offers', 'priority' => '0.9', 'freq' => 'weekly'],
@@ -812,6 +832,14 @@ try {
             $lines[] = '    <lastmod>' . $today . '</lastmod>';
             $lines[] = '    <changefreq>' . $sp['freq'] . '</changefreq>';
             $lines[] = '    <priority>' . $sp['priority'] . '</priority>';
+            $staticImages = $sp['path'] === '/'
+                ? json_encode(['/brand-icon.png', '/images/logo.png'])
+                : ($sp['path'] === '/about'
+                    ? json_encode(['/images/service-majlis.jpg'])
+                    : ($sp['path'] === '/cleaning-packages'
+                        ? json_encode(['/images/service-apartments.jpg'])
+                        : '[]'));
+            $appendImages($lines, $staticImages, 'خدمات التنظيف بالرياض');
             $lines[] = '  </url>';
         }
 
@@ -827,7 +855,7 @@ try {
         }
 
         // Services
-        $servicesStmt = $pdo->query("SELECT seo_slug, seo_title, title FROM services WHERE is_active = 1");
+        $servicesStmt = $pdo->query("SELECT seo_slug, seo_title, title, images FROM services WHERE is_active = 1 AND seo_enabled = 1");
         $services = $servicesStmt->fetchAll();
         foreach ($services as $srv) {
             $slug = $srv['seo_slug'] ?: '';
@@ -838,13 +866,14 @@ try {
             $lines[] = '    <lastmod>' . $today . '</lastmod>';
             $lines[] = '    <changefreq>weekly</changefreq>';
             $lines[] = '    <priority>0.85</priority>';
+            $appendImages($lines, $srv['images'] ?? '[]', (string)($srv['seo_title'] ?: $srv['title']));
             $lines[] = '  </url>';
         }
 
         // Packages
         $pkgCount = 0;
         try {
-            $pkgStmt = $pdo->query("SELECT seo_slug, name FROM packages WHERE is_active = 1");
+            $pkgStmt = $pdo->query("SELECT seo_slug, name, images, image_url FROM packages WHERE is_active = 1 AND seo_enabled = 1");
             $pkgs = $pkgStmt->fetchAll();
             foreach ($pkgs as $pkg) {
                 $slug = $pkg['seo_slug'] ?: '';
@@ -855,6 +884,10 @@ try {
                 $lines[] = '    <lastmod>' . $today . '</lastmod>';
                 $lines[] = '    <changefreq>weekly</changefreq>';
                 $lines[] = '    <priority>0.85</priority>';
+                $packageImages = !empty($pkg['images'])
+                    ? $pkg['images']
+                    : json_encode(array_filter([(string)($pkg['image_url'] ?? ''), '/images/service-apartments.jpg']));
+                $appendImages($lines, $packageImages, (string)$pkg['name']);
                 $lines[] = '  </url>';
                 $pkgCount++;
             }
@@ -868,7 +901,7 @@ try {
         $lines[] = '    <priority>0.8</priority>';
         $lines[] = '  </url>';
 
-        $postsStmt = $pdo->query("SELECT slug, title, published_at FROM posts WHERE status = 'published' AND is_active = 1");
+        $postsStmt = $pdo->query("SELECT slug, title, published_at, cover_image, og_image FROM posts WHERE status = 'published' AND is_active = 1");
         $posts = $postsStmt->fetchAll();
         foreach ($posts as $post) {
             $slug = $post['slug'] ?: '';
@@ -879,11 +912,12 @@ try {
             $lines[] = '    <lastmod>' . substr((string)($post['published_at'] ?: $today), 0, 10) . '</lastmod>';
             $lines[] = '    <changefreq>monthly</changefreq>';
             $lines[] = '    <priority>0.75</priority>';
+            $appendImages($lines, json_encode(array_filter([(string)($post['og_image'] ?? ''), (string)($post['cover_image'] ?? '')])), (string)$post['title']);
             $lines[] = '  </url>';
         }
 
         // SEO Pages
-        $pagesStmt = $pdo->query("SELECT slug, seo_slug, title, published_at FROM seo_pages WHERE status = 'published' AND is_active = 1 AND trim(target_keyword) <> '' AND length(trim(content)) >= 600");
+        $pagesStmt = $pdo->query("SELECT slug, seo_slug, title, published_at, cover_image, og_image FROM seo_pages WHERE status = 'published' AND is_active = 1 AND trim(target_keyword) <> '' AND length(trim(content)) >= 600");
         $seoPages = $pagesStmt->fetchAll();
         foreach ($seoPages as $sp) {
             $slug = $sp['slug'] ?: $sp['seo_slug'] ?: '';
@@ -894,6 +928,7 @@ try {
             $lines[] = '    <lastmod>' . substr((string)($sp['published_at'] ?: $today), 0, 10) . '</lastmod>';
             $lines[] = '    <changefreq>monthly</changefreq>';
             $lines[] = '    <priority>0.82</priority>';
+            $appendImages($lines, json_encode(array_filter([(string)($sp['og_image'] ?? ''), (string)($sp['cover_image'] ?? '')])), (string)$sp['title']);
             $lines[] = '  </url>';
         }
 
@@ -909,6 +944,7 @@ try {
             'areaPages' => count($neighborhoods),
             'servicePages' => count($services),
             'containerPages' => $pkgCount,
+            'packagePages' => $pkgCount,
             'blogPages' => count($posts) + 1,
             'seoPages' => count($seoPages)
         ];
@@ -2119,12 +2155,12 @@ try {
         } catch (\Exception $e) {}
 
         echo json_encode([
-            'reply' => "أهلاً وسهلاً بك! 👋 أنا المساعد الذكي لـ **{$siteName}** — متخصصون في تأجير باقات التنظيف الأنقاض والنفايات والمكابس وعقود بلدي بالرياض.\n\nكيف أقدر أساعدك اليوم؟",
+            'reply' => "أهلاً وسهلاً بك! 👋 أنا المساعد الذكي لـ **{$siteName}** — أساعدك في اختيار خدمة التنظيف المناسبة بالرياض.\n\nكيف أقدر أساعدك اليوم؟",
             'messageType' => 'options',
             'options' => [
-                ['label' => 'اطلب باقة التنظيف الآن', 'value' => 'order', 'emoji' => '📦'],
+                ['label' => 'اطلب خدمة تنظيف الآن', 'value' => 'order', 'emoji' => '✨'],
                 ['label' => 'طلب عرض سعر فوري', 'value' => 'quote', 'emoji' => '📋'],
-                ['label' => 'عقود نظافة بلدي', 'value' => 'contract', 'emoji' => '📜']
+                ['label' => 'خدمات التنظيف المتخصصة', 'value' => 'specialized', 'emoji' => '🧽']
             ],
             'flowState' => ['step' => 'main_menu', 'data' => new stdClass()]
         ], JSON_UNESCAPED_UNICODE);
@@ -2146,9 +2182,19 @@ try {
             } catch (\Exception $e) {}
 
             $categoryMeta = [
-                'debris' => ['title' => 'باقات التنظيف الأنقاض ومخلفات البناء', 'description' => 'باقات التنظيف 12 و15 و20 و30 ياردة لمخلفات الهدم والترميم والإنشاءات بالرياض', 'emoji' => '🏗️'],
-                'waste' => ['title' => 'باقات التنظيف النفايات والمكابس', 'description' => 'باقات التنظيف 6 و10 ياردة ومكابس نفايات كهربائية وهيدروليكية للمنشآت والمجمعات', 'emoji' => '🚛'],
-                'contract' => ['title' => 'عقود النظافة ورخص بلدي', 'description' => 'عقود نظافة إلكترونية موثقة ومعتمدة من منصة بلدي وأمانة الرياض لتجديد الرخص', 'emoji' => '📋'],
+                'apartments' => ['title' => 'تنظيف الشقق والمنازل', 'description' => 'تنظيف عام وعميق للشقق والمنازل حسب المساحة والاحتياج', 'emoji' => '🏠'],
+                'villas' => ['title' => 'تنظيف الفلل والقصور', 'description' => 'تنظيف شامل للفلل والقصور والأدوار والمرافق', 'emoji' => '🏡'],
+                'palaces' => ['title' => 'تنظيف القصور', 'description' => 'تنظيف منظم للمساحات الكبيرة والقصور', 'emoji' => '✨'],
+                'move_clean' => ['title' => 'تنظيف قبل وبعد النقل', 'description' => 'تهيئة المكان قبل الانتقال وتنظيفه بعد إخلائه', 'emoji' => '🧹'],
+                'majlis' => ['title' => 'غسيل المجالس والكنب بالبخار', 'description' => 'غسيل وتعقيم وتجفيف للمجالس والكنب والمفروشات', 'emoji' => '🛋️'],
+                'marble' => ['title' => 'جلي وتلميع الرخام', 'description' => 'معالجة وتلميع الرخام والبلاط بعناية', 'emoji' => '✨'],
+                'tanks' => ['title' => 'تنظيف وتطهير الخزانات', 'description' => 'تنظيف وتطهير خزانات المياه للمنازل والمنشآت', 'emoji' => '💧'],
+                'ac' => ['title' => 'غسيل المكيفات', 'description' => 'تنظيف المكيفات وتحسين كفاءة التشغيل', 'emoji' => '❄️'],
+                'pest' => ['title' => 'مكافحة الحشرات', 'description' => 'حلول مكافحة مناسبة للمنازل والمنشآت', 'emoji' => '🛡️'],
+                'postcon' => ['title' => 'تنظيف بعد البناء والتشطيب', 'description' => 'إزالة آثار الغبار وبقايا التشطيب وتجهيز المكان', 'emoji' => '🧽'],
+                'facades' => ['title' => 'تنظيف الواجهات والمكاتب', 'description' => 'تنظيف واجهات ومكاتب بمعدات مناسبة للأسطح', 'emoji' => '🏢'],
+                'facilities' => ['title' => 'تنظيف المنشآت', 'description' => 'خدمات تنظيف مرنة للمكاتب والمحلات والمنشآت', 'emoji' => '🏢'],
+                'fire_safety' => ['title' => 'خدمات السلامة', 'description' => 'خدمات وتجهيزات السلامة للمواقع والمنشآت', 'emoji' => '🛡️'],
             ];
 
             // Helper to get containers
@@ -2164,14 +2210,17 @@ try {
                     } catch (\Exception $e2) {}
                 }
                 $fallbackImages = [
-                    'debris' => '/images/container-1.webp',
-                    'waste' => '/images/container-2.webp',
-                    'contract' => '/images/container-1.webp',
+                    'apartments' => '/images/service-apartments.jpg',
+                    'villas' => '/images/service-villas.jpg',
+                    'majlis' => '/images/service-majlis.jpg',
+                    'marble' => '/images/service-marble.jpg',
+                    'ac' => '/images/service-ac.jpg',
+                    'facilities' => '/images/service-facilities.jpg',
                 ];
                 return array_map(function($c) use ($categoryMeta, $fallbackImages) {
-                    $cat = $c['category'] ?? 'debris';
-                    if (!isset($categoryMeta[$cat])) $cat = 'debris';
-                    $catTitle = $categoryMeta[$cat]['title'] ?? 'باقات التنظيف الأنقاض';
+                    $cat = $c['category'] ?? 'apartments';
+                    if (!isset($categoryMeta[$cat])) $cat = 'apartments';
+                    $catTitle = $categoryMeta[$cat]['title'] ?? 'خدمات التنظيف';
                     $feats = [];
                     if (!empty($c['features'])) {
                         $f = json_decode((string)$c['features'], true);
@@ -2179,7 +2228,7 @@ try {
                     }
                     $img = !empty($c['image_url']) && !str_contains($c['image_url'], 'package-0') && !str_contains($c['image_url'], 'cleaning')
                         ? $c['image_url']
-                        : ($fallbackImages[$cat] ?? '/images/container-1.webp');
+                        : ($fallbackImages[$cat] ?? '/images/service-apartments.jpg');
 
                     return [
                         'id' => 'container_' . $c['id'],
@@ -2190,12 +2239,12 @@ try {
                         'capacity' => $c['capacity'] ?? '',
                         'description' => $c['description'] ?? '',
                         'price' => ((float)($c['price_per_day'] ?? 0) > 0) ? (float)$c['price_per_day'] : null,
-                        'priceNote' => $c['price_note'] ?? $c['price_text'] ?? 'حسب الموقع ومدة الإيجار',
+                        'priceNote' => $c['price_note'] ?? $c['price_text'] ?? 'حسب مساحة المكان ونطاق الخدمة',
                         'priceType' => ((float)($c['price_per_day'] ?? 0) > 0) ? 'fixed' : 'quote',
                         'image' => $img,
                         'priceText' => $c['price_text'] ?? '',
                         'features' => $feats,
-                        'bestFor' => $c['suitable_for'] ?? 'مشاريع البناء والترميم والمنشآت'
+                        'bestFor' => $c['suitable_for'] ?? 'المنازل والفلل والمكاتب والمنشآت'
                     ];
                 }, $rows);
             };
@@ -2205,20 +2254,20 @@ try {
                 $containers = $getPackages();
                 $categories = array_values(array_unique(array_map(function($c) { return $c['category']; }, $containers)));
                 if (empty($categories)) {
-                    $categories = ['debris', 'waste', 'contract'];
+                    $categories = ['apartments', 'villas', 'majlis'];
                 }
                 $cards = [
                     [
                         'id' => 'all',
                         'category' => 'all',
-                        'title' => 'جميع مقاسات وأنواع الباقات التنظيف',
-                        'description' => 'استعرض كافة باقات التنظيف الأنقاض والنفايات والمكابس المتاحة',
-                        'image' => '/images/container-1.webp',
-                        'emoji' => '📦'
+                        'title' => 'جميع خدمات التنظيف',
+                        'description' => 'استعرض خدمات التنظيف المتاحة للمنازل والفلل والمكاتب والمنشآت',
+                        'image' => '/images/service-apartments.jpg',
+                        'emoji' => '✨'
                     ]
                 ];
                 foreach ($categories as $cat) {
-                    $meta = $categoryMeta[$cat] ?? ['title' => 'تأجير باقات التنظيف', 'description' => 'خدمات تأجير باقات التنظيف بالرياض', 'emoji' => '🏗️'];
+                    $meta = $categoryMeta[$cat] ?? ['title' => 'خدمات التنظيف', 'description' => 'خدمات تنظيف بالرياض حسب احتياجك', 'emoji' => '✨'];
                     $first = null;
                     foreach ($containers as $c) {
                         if ($c['category'] === $cat) { $first = $c; break; }
@@ -2228,7 +2277,7 @@ try {
                         'category' => $cat,
                         'title' => $meta['title'],
                         'description' => $meta['description'],
-                        'image' => $first ? $first['image'] : '/images/container-1.webp',
+                        'image' => $first ? $first['image'] : '/images/service-apartments.jpg',
                         'emoji' => $meta['emoji']
                     ];
                 }
@@ -2241,9 +2290,9 @@ try {
                     'reply' => "أهلاً بك في **{$siteName}**! يسعدنا خدمتك، اختر من الخيارات التالية:",
                     'messageType' => 'options',
                     'options' => [
-                        ['label' => 'اطلب باقة التنظيف الآن', 'value' => 'order', 'emoji' => '📦'],
+                        ['label' => 'اطلب خدمة تنظيف الآن', 'value' => 'order', 'emoji' => '✨'],
                         ['label' => 'طلب عرض سعر فوري', 'value' => 'quote', 'emoji' => '📋'],
-                        ['label' => 'عقود نظافة بلدي', 'value' => 'contract', 'emoji' => '📜']
+                        ['label' => 'خدمات التنظيف المتخصصة', 'value' => 'specialized', 'emoji' => '🧽']
                     ],
                     'flowState' => ['step' => 'main_menu', 'data' => []]
                 ], JSON_UNESCAPED_UNICODE);
@@ -2352,7 +2401,7 @@ try {
                 }
                 $services = $getServices();
                 echo json_encode([
-                    'reply' => $isQuote ? "📋 ممتاز! اختر نوع الخدمة أو الباقة التنظيف المطلوبة لطلب عرض السعر:" : "ممتاز! 💪 اختر نوع الباقات التنظيف أو الخدمة المطلوبة:",
+                    'reply' => $isQuote ? "📋 ممتاز! اختر نوع الخدمة المطلوبة لطلب عرض السعر:" : "ممتاز! 💪 اختر نوع خدمة التنظيف المطلوبة:",
                     'messageType' => 'service_cards',
                     'cards' => $services,
                     'flowState' => ['step' => 'service_type', 'data' => $data]

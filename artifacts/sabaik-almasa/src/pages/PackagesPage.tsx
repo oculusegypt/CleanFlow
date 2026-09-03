@@ -23,9 +23,9 @@ export default function PackagesPage() {
   else if (paramsAc) category = "ac"
   else if (paramsSafety) category = "fire_safety"
   else if (paramsAny?.category) {
-    if (paramsAny.category === "debris" || paramsAny.category === "أنقاض" || paramsAny.category === "باقات التنظيف-الأنقاض") category = "debris"
-    else if (paramsAny.category === "waste" || paramsAny.category === "نفايات" || paramsAny.category === "باقات التنظيف-النفايات") category = "waste"
-    else if (paramsAny.category === "contract" || paramsAny.category === "contracts" || paramsAny.category === "عقود-النظافة") category = "contract"
+    if (paramsAny.category === "debris" || paramsAny.category === "أنقاض" || paramsAny.category === "باقات التنظيف-الأنقاض") category = "apartments"
+    else if (paramsAny.category === "waste" || paramsAny.category === "نفايات" || paramsAny.category === "باقات التنظيف-النفايات") category = "villas"
+    else if (paramsAny.category === "contract" || paramsAny.category === "contracts" || paramsAny.category === "عقود-النظافة") category = "facilities"
     else if (paramsAny.category === "fire-safety" || paramsAny.category === "fire_safety") category = "fire_safety"
   }
 

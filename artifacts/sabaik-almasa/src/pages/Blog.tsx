@@ -100,7 +100,7 @@ export default function Blog() {
             المدونة والمقالات التخصصية
           </div>
           <h1 className="text-3xl md:text-5xl font-black mb-4 leading-tight">
-            دليل الباقات التنظيف وإدارة المخلفات
+            دليل التنظيف والعناية بالمكان
           </h1>
           <p className="text-white/70 text-lg max-w-2xl mx-auto">
             كل ما تحتاج معرفته عن مقاسات الباقات التنظيف، عقود النظافة المعتمدة، واشتراطات أمانة منطقة الرياض
@@ -166,7 +166,7 @@ export default function Blog() {
                           src={post.coverImage.startsWith("http") ? post.coverImage : `${API_BASE}${post.coverImage}`}
                           alt={post.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => { e.currentTarget.src = "/api/uploads/container-debris-large.webp" }}
+                          onError={(e) => { e.currentTarget.src = "/images/service-apartments.jpg" }}
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">

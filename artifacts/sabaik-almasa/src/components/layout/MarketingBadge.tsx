@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { ArrowLeft, X } from "lucide-react"
 import { useSiteSettings } from "@/context/SiteSettingsContext"
 
-const DISMISS_KEY = "hawiyat_marketing_badge_dismissed"
+const DISMISS_KEY = "cleanflow_marketing_badge_dismissed"
 const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")
 
 export function MarketingBadge() {
@@ -43,8 +43,8 @@ export function MarketingBadge() {
 
   if (!enabled || !mounted) return null
 
-  const resolvedLogo = logoUrl || `${BASE}/images/logo.webp`
-  const resolvedName = companyName || "منظومة إدارة الباقات التنظيف"
+  const resolvedLogo = logoUrl || `${BASE}/brand-icon.png`
+  const resolvedName = companyName || "خدمات التنظيف بالرياض"
 
   return (
     <div
@@ -77,18 +77,18 @@ export function MarketingBadge() {
           </div>
 
           <div className="pl-5">
-            <h2 className="text-sm font-bold leading-6">منظومة تأجير الباقات التنظيف المتكاملة</h2>
+            <h2 className="text-sm font-bold leading-6">خدمات تنظيف متكاملة في الرياض</h2>
             <p className="mt-1 text-[10px] leading-relaxed text-white/65">
-              حلول رقمية وإدارة أسطول ذكية لنقل الأنقاض والمخلفات بالرياض.
+              تنظيف احترافي للمنازل والفلل والمكاتب بخدمة موثوقة.
             </p>
           </div>
 
           <a
-            href="/#containers"
+            href="/cleaning-packages"
             aria-label="استعراض الباقات التنظيف"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d7a936] px-3 py-2 text-xs font-bold text-[#102c42] shadow-lg shadow-black/15 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#ebc45f]"
           >
-            استعراض الباقات التنظيف المتاحة
+            استعراض باقات التنظيف
             <ArrowLeft size={14} />
           </a>
         </div>

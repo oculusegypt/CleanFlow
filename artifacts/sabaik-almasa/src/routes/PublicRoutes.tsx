@@ -16,7 +16,6 @@ const WhyUsLeadership = lazy(() => import("@/pages/WhyUsLeadership"))
 const WhyUsWhatWe = lazy(() => import("@/pages/WhyUsWhatWe"))
 const WhyUsCommitment = lazy(() => import("@/pages/WhyUsCommitment"))
 const WhyUsExperience = lazy(() => import("@/pages/WhyUsExperience"))
-const PricingPage = lazy(() => import("@/pages/PricingPage"))
 const OffersPage = lazy(() => import("@/pages/OffersPage"))
 const NeighborhoodPage = lazy(() => import("@/pages/NeighborhoodPage"))
 const AreasIndexPage = lazy(() => import("@/pages/AreasIndexPage"))
@@ -72,9 +71,10 @@ export function PublicRoutes() {
         <Route path="/services/:slug/" component={ServiceDetail} />
         <Route path="/خدماتنا/:slug" component={ServiceDetail} />
 
-        <Route path="/pricing" component={PricingPage} />
-        <Route path="/pricing/" component={PricingPage} />
-        <Route path="/الأسعار" component={PricingPage} />
+        {/* Keep the former URL useful without exposing the retired pricing page. */}
+        <Route path="/pricing"><Redirect to="/cleaning-packages" /></Route>
+        <Route path="/pricing/"><Redirect to="/cleaning-packages" /></Route>
+        <Route path="/الأسعار"><Redirect to="/cleaning-packages" /></Route>
         <Route path="/offers" component={OffersPage} />
         <Route path="/offers/" component={OffersPage} />
         <Route path="/العروض" component={OffersPage} />
@@ -82,16 +82,6 @@ export function PublicRoutes() {
         <Route path="/cleaning-packages" component={PackagesPage} />
         <Route path="/cleaning-packages/fire-safety" component={PackagesPage} />
         <Route path="/cleaning-packages/:slug" component={PackageDetail} />
-        <Route path="/container/:slug" component={PackageDetail} />
-        <Route path="/packages" component={PackagesPage} />
-        <Route path="/packages/" component={PackagesPage} />
-        <Route path="/packages/debris" component={PackagesPage} />
-        <Route path="/packages/waste" component={PackagesPage} />
-        <Route path="/packages/contracts" component={PackagesPage} />
-        <Route path="/packages/contract" component={PackagesPage} />
-        <Route path="/packages/fire-safety" component={PackagesPage} />
-        <Route path="/packages/:category" component={PackagesPage} />
-        <Route path="/باقات التنظيف/:category" component={PackagesPage} />
         <Route path="/packages" component={PackagesPage} />
         <Route path="/packages/" component={PackagesPage} />
 

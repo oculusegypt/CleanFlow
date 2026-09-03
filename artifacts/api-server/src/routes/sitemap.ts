@@ -77,12 +77,11 @@ function getStaticPages(base: string, siteName: string) {
   return [
     { path: "/",                               priority: "1.0",  freq: "weekly",  images: [
       { loc: `${base}/brand-icon.png`, title: `${siteName} — شعار الشركة` },
-      { loc: `${base}/images/logo.webp`,    title: `شعار ${siteName}` },
+      { loc: `${base}/images/logo.png`,    title: `شعار ${siteName}` },
     ]},
     { path: "/about",                          priority: "0.9",  freq: "monthly", images: [
-      { loc: `${base}/images/ceo.webp`, title: `رسالة المدير التنفيذي — ${siteName}` },
+      { loc: `${base}/images/service-majlis.jpg`, title: `رسالة الإدارة — ${siteName}` },
     ]},
-    { path: "/pricing",                        priority: "0.95", freq: "monthly", images: [] },
     { path: "/offers",                         priority: "0.9",  freq: "weekly",  images: [] },
     { path: "/cleaning-packages",              priority: "0.9",  freq: "monthly", images: [
       { loc: `${base}/images/service-apartments.jpg`, title: "خدمة تنظيف الشقق — شركة تنظيف بالرياض" },

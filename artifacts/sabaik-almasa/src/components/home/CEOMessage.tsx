@@ -6,14 +6,14 @@ export function CEOMessage() {
   const { companyName, homepageContent } = useSiteSettings()
   const ceo = (homepageContent as any)?.ceo || (homepageContent?.sections as any)?.ceo || {}
 
-  const resolvedName = companyName || "خدمات الباقات التنظيف"
+  const resolvedName = companyName || "خدمات التنظيف"
   const title = ceo.title || "كلمة الإدارة العامة"
-  const subtitle = ceo.subtitle || "نبني شراكات موثوقة في إدارة المخلفات والأنقاض"
-  const p1 = ceo.message1 || `نعتبر أنفسنا شركاء نجاح حقيقيين لكافة المشاريع الإنشائية والتطويرية والتجارية في مدينة الرياض. التزامنا بتوفير باقات التنظيف متينة بمختلف المقاسات، وسرعة استجابة فائقة في التوصيل والسحب، ونقل آمن ومسؤول للأنقاض والمخلفات وفق أعلى الاشتراطات البيئية هو الأساس الذي بنينا عليه ريادتنا.`
-  const p2 = ceo.message2 || `ندرك أن النهضة العمرانية المتسارعة التي تشهدها العاصمة تتطلب دعماً لوجستياً فعالاً وموثوقاً لإدارة المخلفات، ونحن مستمرون في تطوير أسطولنا وخدماتنا لنكون دائماً الخيار الأول والموثوق لكافة عملائنا من مقاولين ومطورين وأفراد.`
+  const subtitle = ceo.subtitle || "نعتني بتفاصيل المكان ونبني ثقة تدوم"
+  const p1 = ceo.message1 || `نؤمن أن التنظيف الجيد يبدأ بفهم احتياج كل منزل أو منشأة، ثم تنفيذ العمل بعناية ووضوح. لذلك نحرص على تدريب فريقنا واختيار الأدوات المناسبة وتسليم المكان في أفضل صورة ممكنة.`
+  const p2 = ceo.message2 || `هدفنا أن يحصل كل عميل في الرياض على تجربة سهلة من أول تواصل حتى انتهاء الخدمة، مع التزام بالمواعيد واهتمام حقيقي بالتفاصيل التي تصنع الفرق.`
   const authorName = ceo.authorName || "الإدارة العامة"
-  const authorTitle = ceo.authorTitle || (companyName ? `${companyName} لتأجير الباقات التنظيف ونقل الأنقاض` : "خدمات تأجير الباقات التنظيف ونقل الأنقاض")
-  const authorImage = ceo.authorImage || "/images/ceo.webp"
+  const authorTitle = ceo.authorTitle || (companyName ? `${companyName} لخدمات التنظيف` : "فريق خدمات التنظيف")
+  const authorImage = ceo.authorImage || "/images/service-majlis.jpg"
 
   return (
     <section className="py-24 bg-primary text-white relative">
@@ -36,7 +36,7 @@ export function CEOMessage() {
                   alt={`${authorName} — ${authorTitle}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = "/images/shareek-mawsouq.webp"
+                    e.currentTarget.src = "/images/service-majlis.jpg"
                   }}
                 />
               </div>

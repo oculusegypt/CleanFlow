@@ -9,13 +9,13 @@ import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function AreasIndexPage() {
   const { companyName, phoneCall, phoneWhatsapp, isLoaded } = useSiteSettings()
-  const resolvedCompany = companyName || "خدمات تأجير الباقات التنظيف"
+  const resolvedCompany = companyName || "خدمات التنظيف"
 
   useEffect(() => {
     if (!isLoaded) return
     const site = getSiteUrl()
-    document.title = companyName ? `مناطق خدمة وتأجير الباقات التنظيف في الرياض | ${companyName}` : "مناطق خدمة وتأجير الباقات التنظيف في الرياض"
-    const description = companyName ? `تعرف على مناطق وأحياء خدمة ${companyName} لتأجير باقات التنظيف الأنقاض والنفايات ونقل المخلفات في شمال وجنوب وشرق وغرب الرياض.` : "تعرف على مناطق وأحياء خدمة تأجير باقات التنظيف الأنقاض والنفايات ونقل المخلفات في شمال وجنوب وشرق وغرب الرياض."
+    document.title = companyName ? `مناطق خدمات التنظيف في الرياض | ${companyName}` : "مناطق خدمات التنظيف في الرياض"
+    const description = companyName ? `تعرف على مناطق وأحياء خدمة ${companyName} لتنظيف المنازل والفلل والمكاتب في شمال وجنوب وشرق وغرب الرياض.` : "تعرف على مناطق وأحياء خدمات تنظيف المنازل والفلل والمكاتب في الرياض."
     let meta = document.querySelector("meta[name='description']") as HTMLMetaElement | null
     if (!meta) {
       meta = document.createElement("meta")
@@ -39,11 +39,11 @@ export default function AreasIndexPage() {
     schema.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "مناطق خدمة وتأجير الباقات التنظيف في الرياض",
+      "name": "مناطق خدمات التنظيف في الرياض",
       "description": description,
       "url": `${site}/areas`,
       "inLanguage": "ar",
-      "about": { "@type": "Service", "name": "خدمات تأجير الباقات التنظيف ونقل الأنقاض بالرياض" },
+      "about": { "@type": "Service", "name": "خدمات تنظيف المنازل والمنشآت بالرياض" },
       "mainEntity": {
         "@type": "ItemList",
         "itemListElement": Object.entries(AREAS).map(([slug, area], index) => {
@@ -77,10 +77,10 @@ export default function AreasIndexPage() {
                 <MapPin size={18} /> تغطية كاملة لكافة أحياء مدينة الرياض
               </span>
               <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
-                خدمات تأجير الباقات التنظيف ونقل الأنقاض في جميع أحياء الرياض
+                خدمات التنظيف في جميع أحياء الرياض
               </h1>
               <p className="text-lg text-gray-200 leading-relaxed">
-                نوفر باقات التنظيف الأنقاض والنفايات والمكابس بمختلف المقاسات مع التوصيل الفوري خلال ساعتين وعقود النظافة البلدية المعتمدة.
+                نقدم خدمات تنظيف للمنازل والفلل والمكاتب والمنشآت، مع تنسيق الموعد ونطاق العمل حسب موقعك واحتياجك.
               </p>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function AreasIndexPage() {
                           <span className="group flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 text-gray-800 hover:bg-primary hover:text-white transition-colors cursor-pointer">
                             <span>
                               <span className="block font-bold">{area.name}</span>
-                              <span className="block text-xs opacity-70">تأجير باقات التنظيف وتوصيل فوري</span>
+                              <span className="block text-xs opacity-70">خدمات تنظيف للمنازل والمنشآت</span>
                             </span>
                             <ArrowLeft size={16} className="shrink-0 transition-transform group-hover:-translate-x-1" />
                           </span>
@@ -124,7 +124,7 @@ export default function AreasIndexPage() {
               <a href={`tel:${phoneCall || "0554498403"}`} className="inline-flex items-center gap-2 bg-primary text-white px-7 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors">
                 <Phone size={18} /> {phoneCall || "0554498403"}
               </a>
-              <a href={`https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("أريد الاستفسار عن تأجير الباقات التنظيف بالرياض")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-green-500 text-white px-7 py-3 rounded-xl font-bold hover:bg-green-600 transition-colors">
+              <a href={`https://wa.me/966${(phoneWhatsapp || "0554498403").replace(/^0/, "")}?text=${encodeURIComponent("أريد الاستفسار عن خدمات التنظيف بالرياض")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-green-500 text-white px-7 py-3 rounded-xl font-bold hover:bg-green-600 transition-colors">
                 <MessageCircle size={18} /> واتساب فوري
               </a>
             </div>

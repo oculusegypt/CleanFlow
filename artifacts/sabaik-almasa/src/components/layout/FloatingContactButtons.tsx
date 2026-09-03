@@ -21,7 +21,7 @@ export function FloatingContactButtons() {
     : waDigits.startsWith("0")
     ? `966${waDigits.slice(1)}`
     : waDigits
-  const waHref = `https://wa.me/${waIntl}?text=${encodeURIComponent(companyName ? `مرحباً ${companyName}، أود الاستفسار عن تأجير الباقات التنظيف والأسعار` : "مرحباً، أود الاستفسار عن تأجير الباقات التنظيف والأسعار")}`
+  const waHref = `https://wa.me/${waIntl}?text=${encodeURIComponent(companyName ? `مرحباً ${companyName}، أود الاستفسار عن خدمات التنظيف` : "مرحباً، أود الاستفسار عن خدمات التنظيف")}`
 
   const callDigits = (call || "0554498403").replace(/[^\d+]/g, "")
   const callHref = `tel:${callDigits}`

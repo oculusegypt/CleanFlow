@@ -8,20 +8,20 @@ export function AboutSection() {
   const resolvedCompany = companyName || ""
 
   const title = content.title || "شريكك الرائد في"
-  const highlight = content.highlight || "تأجير الباقات التنظيف وإدارة المخلفات"
+  const highlight = content.highlight || "خدمات تنظيف موثوقة في الرياض"
   const eyebrow = content.eyebrow || "عن المنشأة"
-  const description = content.description || (resolvedCompany ? `${resolvedCompany} خيارك الأمثل في عالم تأجير الباقات التنظيف ونقل الأنقاض ومخلفات البناء والهدم والنفايات بالرياض. نقدم خدماتنا بأسطول حديث ومعايير سلامة بيئية صارمة وسرعة استجابة فائقة.` : "الخيار الأمثل في عالم تأجير الباقات التنظيف ونقل الأنقاض ومخلفات البناء والهدم والنفايات بالرياض. نقدم خدماتنا بأسطول حديث ومعايير سلامة بيئية صارمة وسرعة استجابة فائقة.")
-  const imageUrl = content.imageUrl || "/images/container-1.webp"
+  const description = content.description || (resolvedCompany ? `${resolvedCompany} تقدم خدمات تنظيف احترافية للمنازل والفلل والشقق والمكاتب في الرياض، مع عناية دقيقة بالتفاصيل وفريق موثوق ومواعيد مرنة.` : "نقدم خدمات تنظيف احترافية للمنازل والفلل والشقق والمكاتب في الرياض، مع عناية دقيقة بالتفاصيل وفريق موثوق ومواعيد مرنة.")
+  const imageUrl = content.imageUrl || "/images/service-villas.jpg"
   const points = (content.points && content.points.length > 0) ? content.points.filter(Boolean) : [
-    "أسطول شاحنات وباقات التنظيف بمقاسات متنوعة من 6 إلى 30 ياردة",
-    "توصيل وسحب سريع خلال 2 إلى 4 ساعات على مدار الساعة",
-    "عقود نظافة معتمدة وموثقة لتجديد الرخص التجارية",
-    "تغطية شاملة لكافة أحياء ومناطق الرياض وضواحيها",
+    "فريق تنظيف مدرب وخبرة عملية في العقارات السكنية والتجارية",
+    "تنفيذ منظم ومواعيد مرنة داخل أحياء الرياض",
+    "خدمات منزلية وتجارية تناسب مساحة المكان واحتياجه",
+    "متابعة واضحة من أول تواصل حتى انتهاء الخدمة",
   ]
   const visionTitle = content.visionTitle || "رؤيتنا"
-  const visionDescription = content.visionDescription || "أن نكون المؤسسة الأولى المعتمدة في المملكة في تقديم الحلول اللوجستية وتأجير الباقات التنظيف."
+  const visionDescription = content.visionDescription || "أن نكون الخيار الأكثر ثقة لخدمات التنظيف الاحترافية في الرياض."
   const missionTitle = content.missionTitle || "رسالتنا"
-  const missionDescription = content.missionDescription || "توفير حلول فورية وموثوقة لإزالة ونقل الأنقاض والمخلفات بأعلى كفاءة وأفضل الأسعار."
+  const missionDescription = content.missionDescription || "تقديم تنظيف منظم وآمن بنتائج واضحة، باستخدام أدوات مناسبة لكل مساحة واحتياج."
 
   return (
     <section id="about" className="py-24 bg-gray-50 overflow-hidden relative">
@@ -89,7 +89,7 @@ export function AboutSection() {
               <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-primary to-transparent">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-xl text-white">
                   <p className="font-bold text-2xl mb-2">{content.statValue || "8+"}</p>
-                  <p className="text-sm text-gray-200">{content.statLabel || "سنوات خبرة في تأجير الباقات التنظيف ونقل الأنقاض"}</p>
+                  <p className="text-sm text-gray-200">{content.statLabel || "سنوات خبرة في خدمات التنظيف"}</p>
                 </div>
               </div>
             </div>

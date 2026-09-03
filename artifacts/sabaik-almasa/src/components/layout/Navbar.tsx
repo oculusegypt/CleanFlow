@@ -9,7 +9,6 @@ const NAV_LINKS = [
   { href: "/", text: "الرئيسية" },
   { href: "/cleaning-packages", text: "باقات التنظيف" },
   { href: "/services", text: "الخدمات" },
-  { href: "/pricing", text: "الأسعار" },
   { href: "/blog", text: "المدونة" },
   { href: "/faq", text: "الأسئلة الشائعة" },
   { href: "/contact", text: "اتصل بنا" },

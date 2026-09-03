@@ -7,18 +7,18 @@ export function WhyChooseUs() {
   const content = homepageContent.why || {}
 
   const titlePrefix = content.titlePrefix || "لماذا تختار"
-  const titleHighlight = content.titleHighlight || (companyName ? `خدمات ${companyName} لتأجير الباقات التنظيف بالرياض؟` : "خدماتنا لتأجير الباقات التنظيف بالرياض؟")
-  const description = content.description || "نوفر حلولاً لوجستية متطورة لإدارة مخلفات البناء والهدم والمشاريع الكبرى بأعلى درجات الالتزام والأمان والسلامة بالرياض."
-  const imageUrl = content.imageUrl || "/images/Banner-Big.webp"
+  const titleHighlight = content.titleHighlight || (companyName ? `خدمات ${companyName} للتنظيف بالرياض؟` : "خدماتنا للتنظيف بالرياض؟")
+  const description = content.description || "نلتزم بتقديم خدمة تنظيف منظمة ونتائج ملموسة للمنازل والفلل والمكاتب، من خلال فريق مدرب ومواعيد واضحة وعناية خاصة بكل مساحة."
+  const imageUrl = content.imageUrl || "/images/service-facilities.jpg"
   const points = (content.points && content.points.length > 0) ? content.points.filter(Boolean) : [
     "سرعة الاستجابة والتوصيل الفوري 24/7",
-    "تنوع مقاسات الباقات التنظيف (6، 10، 12، 15، 20، 30 ياردة)",
-    "مكابس نفايات كهربائية وهيدروليكية للمنشآت",
-    "عقود سنوية ودورية معتمدة من أمانة الرياض",
-    "أسعار واضحة وتنافسية بدون أي رسوم خفية",
-    "تفريغ قانوني وآمن في المرادم المعتمدة",
-    "فريق دعم فني وسائقون محترفون على دراية بأحياء الرياض",
-    "خصومات خاصة للمقاولين والمشاريع الكبرى",
+    "تنظيف مخصص للشقق والفلل والقصور والمكاتب",
+    "أدوات ومنتجات مناسبة لنوع السطح والمساحة",
+    "مواعيد مرنة واستجابة سريعة داخل الرياض",
+    "أسعار واضحة بعد فهم احتياج المكان",
+    "عناية خاصة بالتعقيم والنظافة النهائية",
+    "فريق محترف يتعامل باحترام مع ممتلكات العملاء",
+    "متابعة بعد الخدمة لضمان رضاك",
   ]
   const badgeValue = content.badgeValue || "✓"
   const badgeTitle = content.badgeTitle || "شريك معتمد وموثوق"

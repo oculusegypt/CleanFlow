@@ -110,7 +110,7 @@ let indexHtml = rawIndexHtml;
 
 // كل هذه المسارات تُولّد من قاعدة البيانات في كل تشغيل. احذف الناتج السابق
 // أولاً حتى لا تبقى صفحات SEO لباقات التنظيف/خدمات/مقالات حُذفت أو تعطّلت.
-for (const generatedRoute of ["blog", "services", "container", "cleaning-packages", "pricing", "areas"]) {
+for (const generatedRoute of ["blog", "services", "cleaning-packages", "areas"]) {
   rmSync(join(distPublic, generatedRoute), { recursive: true, force: true });
 }
 
@@ -169,7 +169,7 @@ function sanitizeHtml(html) {
 }
 
 function absoluteImg(url) {
-  if (!url) return `${SITE_URL}/logo.webp`;
+  if (!url) return `${SITE_URL}/brand-icon.png`;
   if (/^https?:\/\//i.test(url)) return url;
   return `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
@@ -481,7 +481,7 @@ function generateFullHomepageStaticContent() {
   <header style="background:#1e3a5f;color:#fff;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.1)">
     <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
       <div style="display:flex;align-items:center;gap:12px">
-        <img src="/logo.webp" alt="${esc(siteCompanyName)}" width="48" height="48" style="height:48px;width:auto;border-radius:8px" />
+        <img src="/brand-icon.png" alt="${esc(siteCompanyName)}" width="48" height="48" style="height:48px;width:auto;border-radius:8px" />
         <span style="font-size:20px;font-weight:800">${esc(siteCompanyName)}</span>
       </div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -713,7 +713,7 @@ function generateFullHomepageStaticContent() {
 function updateIndexSeo(html) {
   const title = `${siteBrandName} | خدمات تنظيف احترافية بالرياض`;
   const description = siteDescription;
-  const logo = siteLogo ? absoluteImg(siteLogo) : publicUrl("/logo.webp");
+  const logo = siteLogo ? absoluteImg(siteLogo) : publicUrl("/brand-icon.png");
   const replace = (source, pattern, value) => source.replace(pattern, value);
   const upsertHeadTag = (source, pattern, value) => {
     const matches = [...source.matchAll(pattern)];
@@ -1314,9 +1314,9 @@ for (const page of seoPages) {
 console.log(`   ✅ ${seoPages.length} صفحة SEO (مولدة كـ /page/ و /pages/)`);
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5. صفحة الأسعار /pricing/index.html
+// 5. صفحة الأسعار القديمة — متوقفة عمداً ولا تُولّد ضمن الموقع.
 // ══════════════════════════════════════════════════════════════════════════════
-{
+if (false) {
   const canonical = `${SITE_URL}/pricing`;
   const title = `أسعار وباقات خدمات التنظيف في الرياض 2026 | ${siteCompanyName}`;
   const description = `دليل شامل لأسعار وباقات خدمات تنظيف المنازل، الفلل، الشقق، وغسيل المجالس بالبخار وجلي الرخام بالرياض لعام 2026.`;
@@ -1620,7 +1620,7 @@ console.log(`   ✅ ${seoPages.length} صفحة SEO (مولدة كـ /page/ و /
 {
   const canonical = `${SITE_URL}/services`;
   const title = `خدمات التنظيف بالرياض | ${siteCompanyName}`;
-  const description = `استعرض خدمات ${siteCompanyName} للتنظيف بالرياض: تنظيف المنازل والفلل والقصور، جلي الرخام، غسيل المكيفات، المجالس بالبخار، الخزانات ونقل مخلفات البناء.`;
+  const description = `استعرض خدمات ${siteCompanyName} للتنظيف بالرياض: تنظيف المنازل والفلل والقصور، جلي الرخام، غسيل المكيفات، المجالس بالبخار والخزانات.`;
   const items = services.filter(s => s.isActive !== false && (s.seoSlug || s.slug)).map((s, index) => {
     const slug = s.seoSlug || s.slug;
     return `<li><a href="/services/${encodeURIComponent(slug)}">${esc(s.title)}</a> — ${esc(s.description || "خدمة تنظيف احترافية بالرياض")}</li>`;

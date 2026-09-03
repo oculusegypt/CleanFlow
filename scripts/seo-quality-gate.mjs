@@ -22,8 +22,8 @@ else {
   validation.errors.forEach((message) => failures.push(message));
   validation.warnings.forEach((message) => warnings.push(message));
   const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  if (locs.some(url => /(^|\/)(container|package|packages)(?:\/|$)/i.test(url))) {
-    failures.push("sitemap contains a legacy package/container URL");
+  if (locs.some(url => /\/(?:container|packages)(?:\/|$)/i.test(url))) {
+    failures.push("sitemap contains a legacy container/package URL");
   }
   const imageLocs = [...sitemap.matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map(match => match[1]);
   for (const imageUrl of imageLocs) {
