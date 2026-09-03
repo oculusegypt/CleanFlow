@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer"
 import {
   Calendar, Clock, Eye, Tag, ChevronRight, Share2,
   Facebook, Twitter, Link2, BookOpen, ArrowRight, Loader2,
-  Phone, MessageCircle, Sparkles
+  Phone, MessageCircle, Sparkles, Package
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useServiceRequest } from "@/context/ServiceRequestContext"

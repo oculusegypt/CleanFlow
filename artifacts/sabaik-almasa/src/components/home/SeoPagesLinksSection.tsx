@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, BookOpen, Layers } from "lucide-react"
+import { ArrowLeft, Box, Layers } from "lucide-react"
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || ""
 

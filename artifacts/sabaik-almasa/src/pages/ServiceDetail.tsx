@@ -132,7 +132,7 @@ export default function ServiceDetail() {
   const title = service ? (companyName ? `${service.seoTitle?.trim() || service.title} | ${companyName}` : (service.seoTitle?.trim() || service.title)) : (companyName ? `خدمات التنظيف بالرياض | ${companyName}` : "خدمات التنظيف بالرياض")
   const canonical = siteUrl(`/services/${encodeURIComponent(slug)}`)
 
-  const activeIntel = (service?.seoSlug && SERVICE_INTEL[service.seoSlug]) || DEFAULT_CONTAINER_INTEL
+  const activeIntel = (service?.seoSlug && SERVICE_INTEL[service.seoSlug]) || DEFAULT_SERVICE_INTEL
 
   useDocumentSEO({
     title,
