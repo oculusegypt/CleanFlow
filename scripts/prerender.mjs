@@ -691,6 +691,9 @@ function generateFullHomepageStaticContent() {
         <h2 style="font-size:26px;font-weight:800;margin:0 0 8px">لماذا تختار مؤسسة السهم كلين بالرياض؟</h2>
         <p style="font-size:16px;color:#cbd5e0;margin:0">نوضح نطاق الخدمة وننسق التفاصيل المناسبة لكل موقع قبل التنفيذ</p>
       </div>
+      <div style="display:flex;justify-content:center;margin:0 0 24px">
+        <img src="/brand-icon.png" alt="شعار مؤسسة السهم كلين" width="150" height="150" loading="lazy" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:24px;padding:14px" />
+      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">
           <h4 style="font-size:17px;font-weight:700;margin:0 0 8px">🛠️ أدوات مناسبة لنوع السطح</h4>

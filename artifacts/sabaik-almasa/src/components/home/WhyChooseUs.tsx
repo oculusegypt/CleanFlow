@@ -9,7 +9,7 @@ export function WhyChooseUs() {
   const titlePrefix = content.titlePrefix || "لماذا تختار"
   const titleHighlight = content.titleHighlight || (companyName ? `خدمات ${companyName} للتنظيف بالرياض؟` : "خدماتنا للتنظيف بالرياض؟")
   const description = content.description || "نلتزم بتقديم خدمة تنظيف منظمة ونتائج ملموسة للمنازل والفلل والمكاتب، من خلال فريق مدرب ومواعيد واضحة وعناية خاصة بكل مساحة."
-  const imageUrl = content.imageUrl || "/images/service-facilities.jpg"
+  const imageUrl = "/brand-icon.png"
   const points = (content.points && content.points.length > 0) ? content.points.filter(Boolean) : [
     "سرعة الاستجابة والتوصيل الفوري 24/7",
     "تنظيف مخصص للشقق والفلل والقصور والمكاتب",
@@ -39,7 +39,7 @@ export function WhyChooseUs() {
               <img
                 src={imageUrl}
                 alt={titleHighlight}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-slate-50"
               />
               <div className="absolute top-8 right-8 bg-white p-4 rounded-xl shadow-xl flex items-center gap-4">
                 <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center text-secondary">
