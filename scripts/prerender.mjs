@@ -692,7 +692,7 @@ function generateFullHomepageStaticContent() {
         <p style="font-size:16px;color:#cbd5e0;margin:0">نوضح نطاق الخدمة وننسق التفاصيل المناسبة لكل موقع قبل التنفيذ</p>
       </div>
       <div style="display:flex;justify-content:center;margin:0 0 24px">
-        <img src="/brand-icon.png" alt="شعار مؤسسة السهم كلين" width="150" height="150" loading="lazy" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:24px;padding:14px" />
+        <img src="/images/why-choose-us.png" alt="لماذا تختارنا لخدمات التنظيف بالرياض؟" width="1024" height="1024" loading="lazy" style="display:block;width:100%;max-width:1024px;height:auto;object-fit:contain;background:#fff;border-radius:24px;margin:0 auto" />
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
         <div style="padding:16px;background:rgba(255,255,255,0.08);border-radius:12px">

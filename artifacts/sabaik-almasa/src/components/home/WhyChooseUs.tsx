@@ -9,7 +9,7 @@ export function WhyChooseUs() {
   const titlePrefix = content.titlePrefix || "لماذا تختار"
   const titleHighlight = content.titleHighlight || (companyName ? `خدمات ${companyName} للتنظيف بالرياض؟` : "خدماتنا للتنظيف بالرياض؟")
   const description = content.description || "نلتزم بتقديم خدمة تنظيف منظمة ونتائج ملموسة للمنازل والفلل والمكاتب، من خلال فريق مدرب ومواعيد واضحة وعناية خاصة بكل مساحة."
-  const imageUrl = "/brand-icon.png"
+  const imageUrl = "/images/why-choose-us.png"
   const points = (content.points && content.points.length > 0) ? content.points.filter(Boolean) : [
     "سرعة الاستجابة والتوصيل الفوري 24/7",
     "تنظيف مخصص للشقق والفلل والقصور والمكاتب",
