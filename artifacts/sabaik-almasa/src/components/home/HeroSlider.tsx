@@ -19,6 +19,7 @@ export function HeroSlider() {
 
   const resolvedCompany = companyName || "خدمات التنظيف بالرياض"
   const displaySlides = slides ?? []
+  const primaryHeroTitle = "شركة تنظيف بالرياض للمنازل والفلل والمنشآت"
 
   const positionClasses = (position: string) => {
     const [vertical, horizontal] = position.split("-")
@@ -113,7 +114,7 @@ export function HeroSlider() {
                 {/* Only the active slide gets h1 */}
                 {index === 0 ? (
                   <h1 data-testid="heading-hero-slide" className="mb-5 max-w-3xl text-4xl font-extrabold leading-[1.16] text-white md:mb-6 md:text-6xl lg:text-7xl">
-                    {slide.title}
+                    {primaryHeroTitle}
                   </h1>
                 ) : (
                   <h2 data-testid={`heading-hero-slide-${slide.id}`} className="mb-5 max-w-3xl text-4xl font-extrabold leading-[1.16] text-white md:mb-6 md:text-6xl lg:text-7xl">

@@ -22,7 +22,7 @@ export function SiteSEO() {
     const isAdmin = location.startsWith("/admin")
     const legalName = companyName || "مؤسسة السهم كلين"
     const siteName = legalName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
-    const defaultTitle = `${siteName} | شركة تنظيف بالرياض`
+    const defaultTitle = `شركة تنظيف بالرياض | ${legalName}`
     const defaultDescription = description || "خدمات تنظيف المنازل والفلل والشقق والمكاتب في الرياض، مع تنظيف ما بعد البناء وجلي الرخام وغسيل المكيفات."
     const siteOrigin = getSiteUrl(publicUrl)
     const canonicalPath = sitePath(location.split(/[?#]/)[0] || "/", publicUrl).replace(/\/+$/, "") || "/"

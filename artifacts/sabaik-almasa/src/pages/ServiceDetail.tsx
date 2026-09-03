@@ -145,7 +145,7 @@ export default function ServiceDetail() {
   const bodyText = service ? sanitizeServiceText(bodyDescription(service)) : (companyName ? `تعرف على خدمات ${companyName} للتنظيف في الرياض.` : "تعرف على خدمات التنظيف الاحترافية في الرياض.")
   const metaText = service ? sanitizeServiceText(metaDescription(service)) : (companyName ? `خدمات تنظيف احترافية في الرياض من ${companyName} للمنازل والفلل والمكاتب.` : "خدمات تنظيف احترافية في الرياض للمنازل والفلل والمكاتب.")
   const title = service ? (companyName ? `${service.seoTitle?.trim() || service.title} | ${companyName}` : (service.seoTitle?.trim() || service.title)) : (companyName ? `خدمات التنظيف بالرياض | ${companyName}` : "خدمات التنظيف بالرياض")
-  const canonical = siteUrl(`/services/${encodeURIComponent(slug)}`)
+  const canonical = siteUrl(`/services/${encodeURIComponent(service?.seoSlug || slug)}`)
 
   const activeIntel = (service?.seoSlug && SERVICE_INTEL[service.seoSlug]) || DEFAULT_SERVICE_INTEL
 

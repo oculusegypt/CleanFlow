@@ -15,31 +15,31 @@ const dbs = [
 const LINK_RULES = [
   {
     pattern: /(تنظيف بعد البناء والتشطيب|تنظيف بعد التشطيب|تنظيف بعد البناء|إزالة بقايا الإسمنت|إزالة الدهانات بعد التشطيب)/i,
-    replacement: '<a href="/services/tanzeef-bad-altashteeb-alryad" class="text-primary font-bold hover:underline" title="شركة تنظيف بعد البناء بالرياض">$1</a>'
+    replacement: '<a href="/services/تنظيف-بعد-البناء-والتشطيب-بالرياض" class="text-primary font-bold hover:underline" title="شركة تنظيف بعد البناء بالرياض">$1</a>'
   },
   {
     pattern: /(تنظيف الفلل والقصور|تنظيف الفلل بالرياض|تنظيف فلل بالرياض|تنظيف منازل بالرياض|تنظيف المنازل بالرياض)/i,
-    replacement: '<a href="/services/tanzeef-filal-alryad" class="text-primary font-bold hover:underline" title="شركة تنظيف فلل بالرياض">$1</a>'
+    replacement: '<a href="/services/تنظيف-فلل-وقصور-بالرياض" class="text-primary font-bold hover:underline" title="شركة تنظيف فلل بالرياض">$1</a>'
   },
   {
     pattern: /(غسيل المجالس والكنب بالبخار|غسيل مجالس بالبخار|غسيل كنب بالبخار|تنظيف مجالس بالبخار|تنظيف كنب بالبخار)/i,
-    replacement: '<a href="/services/gaseel-majalis-bukhar-alryad" class="text-primary font-bold hover:underline" title="غسيل مجالس وكنب بالبخار بالرياض">$1</a>'
+    replacement: '<a href="/services/غسيل-مجالس-بالبخار-بالرياض" class="text-primary font-bold hover:underline" title="غسيل مجالس وكنب بالبخار بالرياض">$1</a>'
   },
   {
     pattern: /(تنظيف وغسيل المكيفات|غسيل مكيفات سبليت|تنظيف مكيفات سبليت|غسيل المكيفات بالضغط|تنظيف مكيفات بالرياض)/i,
-    replacement: '<a href="/services/tanzeef-mokeyafat-alryad" class="text-primary font-bold hover:underline" title="شركة تنظيف مكيفات بالرياض">$1</a>'
+    replacement: '<a href="/services/تنظيف-وغسيل-مكيفات-بالرياض" class="text-primary font-bold hover:underline" title="شركة تنظيف مكيفات بالرياض">$1</a>'
   },
   {
     pattern: /(جلي وتلميع الرخام|جلي الرخام بالألماس|تلميع الرخام بالكريستال|جلي وتلميع رخام|جلي رخام بالرياض)/i,
-    replacement: '<a href="/services/jaly-rakham-alryad" class="text-primary font-bold hover:underline" title="شركة جلي وتلميع رخام بالرياض">$1</a>'
+    replacement: '<a href="/services/جلي-وتلميع-رخام-بالرياض" class="text-primary font-bold hover:underline" title="شركة جلي وتلميع رخام بالرياض">$1</a>'
   },
   {
     pattern: /(تنظيف وتطهير خزانات المياه|تنظيف خزانات المياه|تعقيم الخزانات بالكلور|غسيل الخزانات الأرضية|تنظيف خزانات بالرياض)/i,
-    replacement: '<a href="/services/tanzeef-khazanat-alryad" class="text-primary font-bold hover:underline" title="شركة تنظيف وتطهير خزانات بالرياض">$1</a>'
+    replacement: '<a href="/services/تنظيف-وتطهير-خزانات-بالرياض" class="text-primary font-bold hover:underline" title="شركة تنظيف وتطهير خزانات بالرياض">$1</a>'
   },
   {
     pattern: /(مكافحة وإبادة الحشرات|رش مبيدات بضمان|مكافحة حشرات بالرياض|رش مبيدات بالرياض)/i,
-    replacement: '<a href="/services/mokafahat-hasharat-alryad" class="text-primary font-bold hover:underline" title="شركة مكافحة حشرات ورش مبيدات بالرياض">$1</a>'
+    replacement: '<a href="/services/مكافحة-حشرات-بالرياض" class="text-primary font-bold hover:underline" title="شركة مكافحة حشرات ورش مبيدات بالرياض">$1</a>'
   },
   {
     pattern: /(شمال الرياض)/i,
@@ -91,12 +91,12 @@ function injectLinks(html) {
 <div class="article-service-hub" style="margin-top:36px;padding:24px;background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0;">
   <h3 style="font-size:18px;font-weight:800;color:#0f172a;margin-top:0;margin-bottom:12px;">📌 خدمات التنظيف ذات الصلة في الرياض:</h3>
   <ul style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
-    <li><a href="/services/tanzeef-filal-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">🧹 تنظيف الفلل والقصور بالرياض</a></li>
-    <li><a href="/services/tanzeef-bad-altashteeb-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">🏗️ تنظيف بعد البناء والتشطيب</a></li>
-    <li><a href="/services/gaseel-majalis-bukhar-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">🛋️ غسيل المجالس بالبخار 140°</a></li>
-    <li><a href="/services/tanzeef-mokeyafat-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">❄️ غسيل المكيفات بضغط 150 بار</a></li>
-    <li><a href="/services/jaly-rakham-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">💎 جلي وتلميع الرخام بالألماس</a></li>
-    <li><a href="/services/tanzeef-khazanat-alryad" style="color:#0284c7;font-weight:700;text-decoration:none;">💧 تنظيف وتطهير خزانات المياه</a></li>
+    <li><a href="/services/تنظيف-فلل-وقصور-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">🧹 تنظيف الفلل والقصور بالرياض</a></li>
+    <li><a href="/services/تنظيف-بعد-البناء-والتشطيب-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">🏗️ تنظيف بعد البناء والتشطيب</a></li>
+    <li><a href="/services/غسيل-مجالس-بالبخار-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">🛋️ غسيل المجالس بالبخار</a></li>
+    <li><a href="/services/تنظيف-وغسيل-مكيفات-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">❄️ تنظيف وغسيل المكيفات</a></li>
+    <li><a href="/services/جلي-وتلميع-رخام-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">💎 جلي وتلميع الرخام</a></li>
+    <li><a href="/services/تنظيف-وتطهير-خزانات-بالرياض" style="color:#0284c7;font-weight:700;text-decoration:none;">💧 تنظيف وتطهير خزانات المياه</a></li>
   </ul>
 </div>`;
     modified += hubBox;

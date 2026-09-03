@@ -78,6 +78,9 @@ rmSync(join(ROOT, "build_php/images"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/container"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/api/uploads"), { recursive: true, force: true });
 rmSync(join(ROOT, "build_php/sabaik-platform"), { recursive: true, force: true });
+for (const generatedRoute of ["blog", "services", "cleaning-packages", "areas", "page", "pages", "pricing"]) {
+  rmSync(join(ROOT, "build_php", generatedRoute), { recursive: true, force: true });
+}
 
 for (const legacyImage of [
   "Banner-Big.webp", "Banner-Small.webp", "No1-Banner.webp", "good.webp",
@@ -492,6 +495,24 @@ writeFileSync(join(ROOT, "build_php/.htaccess"), `DirectoryIndex index.html inde
   RewriteRule ^blog/?$ blog/index.html [END]
   RewriteRule ^areas/?$ areas/index.html [END]
   RewriteRule ^services/?$ services/index.html [END]
+
+  # Retire legacy URLs so they do not compete with the current Arabic canonicals.
+  RewriteRule ^pricing/?$ /cleaning-packages [R=301,L,NE]
+  RewriteRule ^services/tanzeef-shaqaq-alryad/?$ /services/تنظيف-شقق-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-filal-alryad/?$ /services/تنظيف-فلل-وقصور-بالرياض [R=301,L,NE]
+  RewriteRule ^services/gaseel-majalis-bukhar-alryad/?$ /services/غسيل-مجالس-بالبخار-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-mokeyafat-alryad/?$ /services/تنظيف-وغسيل-مكيفات-بالرياض [R=301,L,NE]
+  RewriteRule ^services/mokafahat-hasharat-alryad/?$ /services/مكافحة-حشرات-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-khazanat-alryad/?$ /services/تنظيف-وتطهير-خزانات-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-masabeh-alryad/?$ /services/تنظيف-وتطهير-مسابح-بالرياض [R=301,L,NE]
+  RewriteRule ^services/jaly-rakham-alryad/?$ /services/جلي-وتلميع-رخام-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-wajahat-alryad/?$ /services/تنظيف-واجهات-مباني-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tanzeef-bad-altashteeb-alryad/?$ /services/تنظيف-بعد-البناء-والتشطيب-بالرياض [R=301,L,NE]
+  RewriteRule ^services/shahadat-salama-riyadh/?$ /services/اصدار-شهادة-سلامة-بالرياض [R=301,L,NE]
+  RewriteRule ^services/tarkeeb-anthimat-wiqaya-hareeq-riyadh/?$ /services/تركيب-ادوات-وقاية-وحماية-من-الحريق-بالرياض [R=301,L,NE]
+  RewriteRule ^services/taqreer-fanni-fawri-riyadh/?$ /services/اعداد-تقرير-فني-فوري-بالرياض [R=301,L,NE]
+  RewriteRule ^services/taqreer-fanni-ghayr-fawri-riyadh/?$ /services/اعداد-تقرير-فني-مجدول-بالرياض [R=301,L,NE]
+  RewriteRule ^services/aqd-siyana-difaa-madani-riyadh/?$ /services/عقد-صيانة-انظمة-سلامة-دفاع-مدني-بالرياض [R=301,L,NE]
 
   # Route /api/* to the PHP handler
   RewriteRule ^api/  api/index.php  [L,QSA]

@@ -1,3 +1,4 @@
 - [API/frontend separation](api-dev-frontend-fallback.md) — API local development must tolerate a missing frontend build because Vite serves the React app separately.
 - [Live sitemap validation](live-sitemap-validation.md) — a passing local sitemap generator does not prove the deployed sitemap is valid; inspect live `<loc>` content after publishing.
 - [Package route compatibility](package-route-compatibility.md) — sitemap and current package API use different slug sources; preserve a shared legacy alias layer when changing package routes.
+- [Hostinger generated-route cleanup](stale-generated-routes.md) — full builds must remove retired generated folders from both the frontend dist and the archive staging directory.

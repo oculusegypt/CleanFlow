@@ -124,7 +124,7 @@ let indexHtml = rawIndexHtml;
 
 // كل هذه المسارات تُولّد من قاعدة البيانات في كل تشغيل. احذف الناتج السابق
 // أولاً حتى لا تبقى صفحات SEO لباقات التنظيف/خدمات/مقالات حُذفت أو تعطّلت.
-for (const generatedRoute of ["blog", "services", "cleaning-packages", "areas"]) {
+  for (const generatedRoute of ["blog", "services", "cleaning-packages", "areas", "page", "pages", "pricing"]) {
   rmSync(join(distPublic, generatedRoute), { recursive: true, force: true });
 }
 
@@ -162,6 +162,32 @@ function replaceLegacyCompanyName(value) {
   return normalized;
 }
 
+const LEGACY_SERVICE_ROUTE_MAP = {
+  "/services/tanzeef-shaqaq-alryad": "/services/تنظيف-شقق-بالرياض",
+  "/services/tanzeef-filal-alryad": "/services/تنظيف-فلل-وقصور-بالرياض",
+  "/services/gaseel-majalis-bukhar-alryad": "/services/غسيل-مجالس-بالبخار-بالرياض",
+  "/services/tanzeef-mokeyafat-alryad": "/services/تنظيف-وغسيل-مكيفات-بالرياض",
+  "/services/mokafahat-hasharat-alryad": "/services/مكافحة-حشرات-بالرياض",
+  "/services/tanzeef-khazanat-alryad": "/services/تنظيف-وتطهير-خزانات-بالرياض",
+  "/services/tanzeef-masabeh-alryad": "/services/تنظيف-وتطهير-مسابح-بالرياض",
+  "/services/jaly-rakham-alryad": "/services/جلي-وتلميع-رخام-بالرياض",
+  "/services/tanzeef-wajahat-alryad": "/services/تنظيف-واجهات-مباني-بالرياض",
+  "/services/tanzeef-bad-altashteeb-alryad": "/services/تنظيف-بعد-البناء-والتشطيب-بالرياض",
+  "/services/shahadat-salama-riyadh": "/services/اصدار-شهادة-سلامة-بالرياض",
+  "/services/tarkeeb-anthimat-wiqaya-hareeq-riyadh": "/services/تركيب-ادوات-وقاية-وحماية-من-الحريق-بالرياض",
+  "/services/taqreer-fanni-fawri-riyadh": "/services/اعداد-تقرير-فني-فوري-بالرياض",
+  "/services/taqreer-fanni-ghayr-fawri-riyadh": "/services/اعداد-تقرير-فني-مجدول-بالرياض",
+  "/services/aqd-siyana-difaa-madani-riyadh": "/services/عقد-صيانة-انظمة-سلامة-دفاع-مدني-بالرياض",
+};
+
+function normalizeLegacyServiceLinks(value) {
+  let normalized = String(value || "");
+  for (const [legacyPath, currentPath] of Object.entries(LEGACY_SERVICE_ROUTE_MAP)) {
+    normalized = normalized.split(legacyPath).join(currentPath);
+  }
+  return normalized;
+}
+
 function sanitizeHtml(html) {
   let sanitized = (html || "")
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
@@ -172,6 +198,7 @@ function sanitizeHtml(html) {
     .replace(/شركة\s+السهم كلين\s+الماسة/g, siteCompanyName)
     .replace(/السهم كلين\s+الماسة/g, siteCompanyName)
     .replace(/منصة\s+باقات التنظيف/g, siteCompanyName)
+    .replace(/href="([^"]+)"/gi, (_, href) => `href="${normalizeLegacyServiceLinks(href)}"`)
     // تحويل روابط الصور النسبية إلى root-relative (تعمل مع أي دومين)
     .replace(/src="(?!https?:\/\/|\/\/)([^/""][^"]*?)"/g, (_, p) => `src="/${p.replace(/^\/+/, "")}"`);
   if (siteCompanyName !== "مؤسسة السهم كلين") {
@@ -452,7 +479,7 @@ function dynamicHomeSchema() {
           itemOffered: {
             "@type": "Service",
             name: service.title,
-            ...(service.description ? { description: service.description } : {}),
+             ...(service.description ? { description: sanitizeClaims(service.description) } : {}),
           },
         })),
       },
@@ -517,7 +544,7 @@ function dynamicHomeSchema() {
           "@type": "ListItem",
           "position": 3,
           "name": "باقات النظافة",
-          "item": publicUrl("/pricing")
+          "item": publicUrl("/cleaning-packages")
         }
       ]
     }
@@ -560,7 +587,7 @@ function generateFullHomepageStaticContent() {
     <section id="hero" style="text-align:center;padding:40px 16px;background:linear-gradient(180deg,#ebf8ff 0%,#fff 100%);border-radius:20px;margin-bottom:40px;border:1px solid #bee3f8">
        <span style="display:inline-block;background:#ebf4ff;color:#2b6cb0;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;margin-bottom:16px">خدمات تنظيف للمنازل والمنشآت بالرياض</span>
       <h1 style="font-size:clamp(26px,5vw,42px);font-weight:900;color:#1e3a5f;margin:0 0 16px;line-height:1.3">
-        مؤسسة السهم كلين لخدمات تنظيف المنازل والفلل بالرياض
+        شركة تنظيف بالرياض للمنازل والفلل والمنشآت
       </h1>
       <p style="font-size:18px;color:#4a5568;max-width:850px;margin:0 auto 24px;line-height:1.8">
          نقدم خدمات تنظيف للفلل والقصور والشقق والمكاتب والمنشآت، إضافة إلى التنظيف بعد التشطيب وغسيل المفروشات وجلي الرخام وتنظيف المكيفات والخزانات. يتحدد نطاق العمل والموعد حسب موقع العقار واحتياجه.
@@ -585,34 +612,34 @@ function generateFullHomepageStaticContent() {
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-filal-alryad" style="color:inherit;text-decoration:none">تنظيف الفلل والقصور</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/تنظيف-فلل-وقصور-بالرياض" style="color:inherit;text-decoration:none">تنظيف الفلل والقصور</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">تنظيف شامل للأدوار، الأجنحة، المسابح، الواجهات، والحدائق مع التعقيم الشامل.</p>
-           <a href="/services/tanzeef-filal-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/تنظيف-فلل-وقصور-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-shaqaq-alryad" style="color:inherit;text-decoration:none">تنظيف الشقق السكنية</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/تنظيف-شقق-بالرياض" style="color:inherit;text-decoration:none">تنظيف الشقق السكنية</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">غسيل السيراميك، المطابخ، الحمامات، الدرايش، وتطهير كامل بأحدث المنظفات.</p>
-           <a href="/services/tanzeef-shaqaq-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/تنظيف-شقق-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-bad-altashteeb-alryad" style="color:inherit;text-decoration:none">تنظيف بعد البناء والتشطيب</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/تنظيف-بعد-البناء-والتشطيب-بالرياض" style="color:inherit;text-decoration:none">تنظيف بعد البناء والتشطيب</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">إزالة بقايا الإسمنت، الدهان، الترويبة، وتلميع الأرضيات وتسليم مفتاح جاهز للسكن.</p>
-           <a href="/services/tanzeef-bad-altashteeb-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/تنظيف-بعد-البناء-والتشطيب-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/gaseel-majalis-bukhar-alryad" style="color:inherit;text-decoration:none">غسيل المجالس والكنب بالبخار</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/غسيل-مجالس-بالبخار-بالرياض" style="color:inherit;text-decoration:none">غسيل المجالس والكنب بالبخار</a></h3>
            <p style="font-size:15px;color:#4a5568;margin-bottom:16px">تنظيف بالبخار للمجالس والمفروشات مع معالجة البقع وفق نوع القماش.</p>
-           <a href="/services/gaseel-majalis-bukhar-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/غسيل-مجالس-بالبخار-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/tanzeef-mokeyafat-alryad" style="color:inherit;text-decoration:none">تنظيف وغسيل المكيفات</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/تنظيف-وغسيل-مكيفات-بالرياض" style="color:inherit;text-decoration:none">تنظيف وغسيل المكيفات</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">غسيل بضغط ماء 150 بار مع جراب الحماية المائي لمنع تناثر المياه وفحص الفريون.</p>
-           <a href="/services/tanzeef-mokeyafat-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/تنظيف-وغسيل-مكيفات-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
         <div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/jaly-rakham-alryad" style="color:inherit;text-decoration:none">جلي وتلميع الرخام والبلاط</a></h3>
+          <h3 style="font-size:20px;font-weight:800;color:#2b6cb0;margin:0 0 10px"><a href="/services/جلي-وتلميع-رخام-بالرياض" style="color:inherit;text-decoration:none">جلي وتلميع الرخام والبلاط</a></h3>
           <p style="font-size:15px;color:#4a5568;margin-bottom:16px">جلي مائي بأقراص الألماس وتلميع بالكريستال الإيطالي لإعادة البريق ولمعان المرآة.</p>
-           <a href="/services/jaly-rakham-alryad" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
+           <a href="/services/جلي-وتلميع-رخام-بالرياض" style="color:#3182ce;font-weight:700;text-decoration:none">تفاصيل الخدمة وطلب عرض ←</a>
         </div>
       </div>
     </section>
@@ -759,7 +786,7 @@ function generateFullHomepageStaticContent() {
 }
 
 function updateIndexSeo(html) {
-  const title = `${siteBrandName} | خدمات تنظيف احترافية بالرياض`;
+  const title = `شركة تنظيف بالرياض | ${siteCompanyName}`;
   const description = siteDescription;
   const logo = siteLogo ? absoluteImg(siteLogo) : publicUrl("/brand-icon.png");
   const replace = (source, pattern, value) => source.replace(pattern, value);
@@ -1301,35 +1328,35 @@ for (const page of seoPages) {
   let primaryServiceName = null;
 
   if (kw.includes("فلل") || kw.includes("فيلا")) {
-    primaryServiceUrl = `${SITE_URL}/services/tanzeef-filal-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/تنظيف-فلل-وقصور-بالرياض`;
     primaryServiceName = "تنظيف الفلل والقصور بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("شقق") || kw.includes("شقة")) {
-    primaryServiceUrl = `${SITE_URL}/services/tanzeef-shaqaq-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/تنظيف-شقق-بالرياض`;
     primaryServiceName = "تنظيف الشقق السكنية بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("مكيف") || kw.includes("مكيفات") || kw.includes("سبلت")) {
-    primaryServiceUrl = `${SITE_URL}/services/tanzeef-mokeyafat-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/تنظيف-وغسيل-مكيفات-بالرياض`;
     primaryServiceName = "تنظيف وغسيل المكيفات بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("مجالس") || kw.includes("كنب") || kw.includes("سجاد") || kw.includes("بخار")) {
-    primaryServiceUrl = `${SITE_URL}/services/gaseel-majalis-bukhar-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/غسيل-مجالس-بالبخار-بالرياض`;
     primaryServiceName = "غسيل المجالس بالبخار بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("رخام") || kw.includes("جلي")) {
-    primaryServiceUrl = `${SITE_URL}/services/jaly-rakham-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/جلي-وتلميع-رخام-بالرياض`;
     primaryServiceName = "جلي وتلميع الرخام بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("خزان") || kw.includes("خزانات")) {
-    primaryServiceUrl = `${SITE_URL}/services/tanzeef-khazanat-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/تنظيف-وتطهير-خزانات-بالرياض`;
     primaryServiceName = "تنظيف وتطهير الخزانات بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("حشرات") || kw.includes("مبيدات")) {
-    primaryServiceUrl = `${SITE_URL}/services/mokafahat-hasharat-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/مكافحة-حشرات-بالرياض`;
     primaryServiceName = "مكافحة الحشرات ورش المبيدات بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("تشطيب") || kw.includes("بناء")) {
-    primaryServiceUrl = `${SITE_URL}/services/tanzeef-bad-altashteeb-alryad`;
+    primaryServiceUrl = `${SITE_URL}/services/تنظيف-بعد-البناء-والتشطيب-بالرياض`;
     primaryServiceName = "تنظيف بعد البناء والتشطيب بالرياض";
     if (indexability.indexable) canonical = primaryServiceUrl;
   }
