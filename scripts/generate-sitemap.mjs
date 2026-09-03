@@ -8,6 +8,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CANONICAL_SITE_URL } from "./seo-config.mjs";
+import { getSeoPageIndexability } from "./seo-page-policy.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(join(root, "lib", "db", "package.json"));
@@ -88,9 +89,9 @@ const seoPages = db.prepare(`
   FROM seo_pages
   WHERE status = 'published' AND is_active = 1
     AND slug IS NOT NULL AND slug != ''
-    AND trim(target_keyword) != '' AND length(trim(content)) >= 600
+    AND trim(target_keyword) != ''
   ORDER BY published_at DESC, id DESC
-`).all();
+`).all().filter(page => getSeoPageIndexability(page).indexable);
 
 const today = new Date().toISOString().slice(0, 10);
 const entries = [];

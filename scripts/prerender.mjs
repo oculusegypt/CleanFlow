@@ -16,6 +16,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CANONICAL_SITE_URL } from "./seo-config.mjs";
+import { getSeoPageIndexability } from "./seo-page-policy.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -208,11 +209,11 @@ function breadcrumbHtml(items) {
 
 function homeSeoLinksNoscript() {
   const pages = db.prepare(`
-    SELECT title, slug, target_keyword, seo_keywords
+    SELECT title, slug, target_keyword, seo_keywords, content
     FROM seo_pages
     WHERE status = 'published' AND is_active = 1
     ORDER BY published_at DESC, id DESC
-  `).all();
+  `).all().filter(page => getSeoPageIndexability(page).indexable);
   if (!pages.length) return "";
 
   const links = pages.map((page) => {
@@ -232,7 +233,7 @@ function homeSeoLinksNoscript() {
 }
 
 // ── المولّد الرئيسي للصفحة ────────────────────────────────────────────────
-function renderPage({ title, description, keywords = "", canonical, ogImage, ogType = "website", schemas = [], breadcrumbs = [], bodyContent }) {
+function renderPage({ title, description, keywords = "", canonical, ogImage, ogType = "website", schemas = [], breadcrumbs = [], bodyContent, robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" }) {
   title = replaceLegacyCompanyName(title);
   description = replaceLegacyCompanyName(description);
   keywords = replaceLegacyCompanyName(keywords);
@@ -257,7 +258,7 @@ function renderPage({ title, description, keywords = "", canonical, ogImage, ogT
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}" />
   ${keywords ? `<meta name="keywords" content="${esc(keywords)}" />` : ""}
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="robots" content="${esc(robots)}" />
   <meta name="language" content="Arabic" />
   <!-- Canonical URL from the configured public origin -->
   <link rel="canonical" href="${esc(canonicalUrl)}" />
@@ -701,7 +702,7 @@ function generateFullHomepageStaticContent() {
       <h2 style="font-size:20px;font-weight:800;color:#1e3a5f;margin:0 0 12px;text-align:center">دليل موضوعات وخدمات النظافة المتخصصة بالرياض</h2>
       <p style="font-size:14px;color:#718096;text-align:center;margin:0 0 20px">فهرس منظم لأدلة وموضوعات التنظيف المصنفة لخدمة سكان ومنشآت مدينة الرياض</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
-        ${db.prepare(`SELECT title, slug FROM seo_pages WHERE status = 'published' AND is_active = 1 LIMIT 30`).all().map(p => 
+        ${db.prepare(`SELECT title, slug, target_keyword, content FROM seo_pages WHERE status = 'published' AND is_active = 1 LIMIT 30`).all().filter(page => getSeoPageIndexability(page).indexable).map(p =>
           `<a href="/page/${esc(p.slug)}" style="padding:6px 12px;background:#fff;color:#4a5568;border-radius:8px;text-decoration:none;font-size:12px;border:1px solid #e2e8f0">${esc(p.title.replace(/\|.*/, "").trim())}</a>`
         ).join("")}
       </div>
@@ -1227,7 +1228,9 @@ console.log(`\n🔎 إنشاء ${seoPages.length} صفحة SEO...`);
 
 for (const page of seoPages) {
   if (!page.slug) continue;
-  let canonical = `${SITE_URL}/page/${encodeURIComponent(page.slug)}`;
+  const indexability = getSeoPageIndexability(page);
+  const selfCanonical = `${SITE_URL}/page/${encodeURIComponent(page.slug)}`;
+  let canonical = selfCanonical;
   const title = page.seo_title || `${page.title} | ${siteCompanyName}`;
   const description = page.seo_description || page.excerpt || page.title;
   const ogImage = `${SITE_URL}/images/service-apartments.jpg`;
@@ -1239,35 +1242,35 @@ for (const page of seoPages) {
   if (kw.includes("فلل") || kw.includes("فيلا")) {
     primaryServiceUrl = `${SITE_URL}/services/tanzeef-filal-alryad`;
     primaryServiceName = "تنظيف الفلل والقصور بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("شقق") || kw.includes("شقة")) {
     primaryServiceUrl = `${SITE_URL}/services/tanzeef-shaqaq-alryad`;
     primaryServiceName = "تنظيف الشقق السكنية بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("مكيف") || kw.includes("مكيفات") || kw.includes("سبلت")) {
     primaryServiceUrl = `${SITE_URL}/services/tanzeef-mokeyafat-alryad`;
     primaryServiceName = "تنظيف وغسيل المكيفات بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("مجالس") || kw.includes("كنب") || kw.includes("سجاد") || kw.includes("بخار")) {
     primaryServiceUrl = `${SITE_URL}/services/gaseel-majalis-bukhar-alryad`;
     primaryServiceName = "غسيل المجالس بالبخار بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("رخام") || kw.includes("جلي")) {
     primaryServiceUrl = `${SITE_URL}/services/jaly-rakham-alryad`;
     primaryServiceName = "جلي وتلميع الرخام بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("خزان") || kw.includes("خزانات")) {
     primaryServiceUrl = `${SITE_URL}/services/tanzeef-khazanat-alryad`;
     primaryServiceName = "تنظيف وتطهير الخزانات بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("حشرات") || kw.includes("مبيدات")) {
     primaryServiceUrl = `${SITE_URL}/services/mokafahat-hasharat-alryad`;
     primaryServiceName = "مكافحة الحشرات ورش المبيدات بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   } else if (kw.includes("تشطيب") || kw.includes("بناء")) {
     primaryServiceUrl = `${SITE_URL}/services/tanzeef-bad-altashteeb-alryad`;
     primaryServiceName = "تنظيف بعد البناء والتشطيب بالرياض";
-    canonical = primaryServiceUrl;
+    if (indexability.indexable) canonical = primaryServiceUrl;
   }
 
   const crumbs = [
@@ -1305,7 +1308,10 @@ for (const page of seoPages) {
     keywords: page.seo_keywords || page.target_keyword || "",
     schemas: [breadcrumbSchema(crumbs)],
     breadcrumbs: crumbs,
-    bodyContent
+    bodyContent,
+    robots: indexability.indexable
+      ? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+      : "noindex, follow",
   });
 
   savePage(`page/${page.slug}`, html);

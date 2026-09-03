@@ -7,6 +7,45 @@ import { requireAdmin, requireSectionPermission } from "../middleware/adminAuth"
 
 const router = Router();
 
+const SEO_PAGE_MIN_CONTENT_CHARS = 900;
+const UNSUPPORTED_TOPIC_PATTERNS = [
+  /نقل\s*(?:عفش|اثاث|مكيفات)/i,
+  /تصليح\s*مكيفات/i,
+  /صيانة\s*مكيفات/i,
+  /فك\s*وتركيب\s*مكيفات/i,
+  /فني\s*مكيفات/i,
+  /مكيفات\s*مستعمل/i,
+  /غسيل\s*سيارات/i,
+  /تسليك\s*مجاري/i,
+  /عزل\s*(?:اسطح|خزانات)/i,
+  /كشف\s*تسربات/i,
+  /تطبيق\s*تنظيف/i,
+  /مكيفات[\s\S]{0,30}مستعمل/i,
+  /مستعمل[\s\S]{0,30}مكيفات/i,
+];
+const CLEANING_TOPIC_PATTERNS = [
+  /تنظيف/i,
+  /نظافة/i,
+  /غسيل/i,
+  /جلي/i,
+  /تلميع/i,
+  /تعقيم/i,
+  /مكافحة/i,
+  /رش\s*مبيدات/i,
+  /[إا]بادة/i,
+];
+
+function isPublicIndexablePage(row: any): boolean {
+  const topic = `${row.title ?? ""} ${row.targetKeyword ?? row.target_keyword ?? ""}`;
+  if (UNSUPPORTED_TOPIC_PATTERNS.some(pattern => pattern.test(topic))) return false;
+  if (!CLEANING_TOPIC_PATTERNS.some(pattern => pattern.test(topic))) return false;
+  const visibleContent = String(row.content ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return visibleContent.length >= SEO_PAGE_MIN_CONTENT_CHARS;
+}
+
 function normalizeSlug(value: unknown, fallback = "صفحة-seo"): string {
   const source = typeof value === "string" ? value : "";
   const slug = source
@@ -95,7 +134,7 @@ router.get("/pages", async (_req, res) => {
   try {
     const rows = await db.select().from(seoPagesTable).where(publicFilter).orderBy(desc(seoPagesTable.publishedAt));
     const companyName = await getSetting("company_name");
-    return res.json(rows.map(row => castRow(row, companyName)));
+    return res.json(rows.filter(isPublicIndexablePage).map(row => castRow(row, companyName)));
   } catch {
     return res.json([]);
   }

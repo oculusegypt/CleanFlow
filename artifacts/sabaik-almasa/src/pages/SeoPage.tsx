@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer"
 import { useServiceRequest } from "@/context/ServiceRequestContext"
 import { replaceLegacyCompanyName, useSiteSettings } from "@/context/SiteSettingsContext"
 import { getSiteUrl, sitePath, siteUrl } from "@/lib/siteUrl"
+import { isSeoPageIndexable } from "@/lib/seoPagePolicy"
 import {
   ArrowRight,
   CheckCircle2,
@@ -150,13 +151,16 @@ export default function SeoPage() {
 
         const title = resolvedData.seoTitle || resolvedData.title
         const description = resolvedData.seoDescription || resolvedData.excerpt
-        const canonical = siteUrl(sitePath(resolvedData.canonicalUrl || window.location.pathname))
+        const indexable = isSeoPageIndexable(resolvedData)
+        const canonical = siteUrl(sitePath(
+          indexable ? (resolvedData.canonicalUrl || window.location.pathname) : window.location.pathname,
+        ))
         const image = toAbsoluteAsset(resolvedData.ogImage || resolvedData.coverImage)
         const resolvedTitle = replaceLegacyCompanyName(`${title} | ${companyName || "الشركة"}`, companyName)
         document.title = resolvedTitle
         setMeta("description", description)
         setMeta("keywords", resolvedData.seoKeywords || resolvedData.targetKeyword)
-        setMeta("robots", "index, follow")
+        setMeta("robots", indexable ? "index, follow" : "noindex, follow")
         setMeta("og:type", "website", "property")
         setMeta("og:title", title, "property")
         setMeta("og:description", description, "property")

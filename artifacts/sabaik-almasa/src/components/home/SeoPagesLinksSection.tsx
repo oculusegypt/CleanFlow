@@ -105,7 +105,7 @@ export function SeoPagesLinksSection() {
           </div>
         </motion.div>
 
-        <nav aria-label="دليل موضوعات الباقات التنظيف بالرياض" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <nav aria-label="دليل موضوعات خدمات التنظيف بالرياض" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPages.map(page => (
             <a
               key={page.id}
