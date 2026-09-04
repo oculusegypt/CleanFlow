@@ -267,6 +267,7 @@ export default function BlogPost() {
         setMeta("description",        resolvedDescription)
         setMeta("keywords",           replaceLegacyCompanyName(d.seoKeywords, companyName))
         setMeta("robots",             "index, follow")
+        setMeta("googlebot",          "index, follow")
         setMeta("og:type",            "article", "property")
         setMeta("og:title",           resolvedTitle, "property")
         setMeta("og:description",     resolvedDescription, "property")
