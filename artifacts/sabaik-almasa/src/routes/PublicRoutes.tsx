@@ -24,6 +24,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"))
 const TermsPage = lazy(() => import("@/pages/TermsPage"))
 const Chat = lazy(() => import("@/pages/Chat"))
 const SeoPage = lazy(() => import("@/pages/SeoPage"))
+const RootSlugRouter = lazy(() => import("@/pages/RootSlugRouter"))
 const NotFound = lazy(() => import("@/pages/not-found"))
 
 export function PublicRoutes() {
@@ -125,6 +126,9 @@ export function PublicRoutes() {
         <Route path="/why-us/experience" component={WhyUsExperience} />
 
         <Route path="/chat" component={Chat} />
+        {/* Root-level Arabic title slugs for services, packages, articles, and SEO pages. */}
+        <Route path="/:slug" component={RootSlugRouter} />
+        <Route path="/:slug/" component={RootSlugRouter} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

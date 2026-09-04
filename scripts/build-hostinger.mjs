@@ -137,6 +137,68 @@ function copyDirRecursive(srcDir, dstDir) {
 copyDirRecursive(distPublic, join(ROOT, "build_php"));
 console.log("  ✅ تم نسخ جميع المجلدات والصفحات الثابتة إلى build_php/");
 
+// Root-level Arabic title aliases keep URLs readable and stable while the
+// prefixed routes remain available for backwards compatibility.
+function titleSlug(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+const rootAliasReserved = new Set([
+  "about", "admin", "api", "areas", "assets", "blog", "call-now", "cleanflow-platform",
+  "contact", "data", "images", "offers", "page", "pages", "privacy", "services",
+  "terms", "uploads", "why-us", "cleaning-packages",
+]);
+function addRootAlias(alias, sourceRelativePath) {
+  const safeAlias = titleSlug(alias);
+  if (!safeAlias || !/[\u0600-\u06FF]/u.test(safeAlias) || rootAliasReserved.has(safeAlias)) return;
+  const source = join(ROOT, "build_php", sourceRelativePath, "index.html");
+  const targetDir = join(ROOT, "build_php", safeAlias);
+  const target = join(targetDir, "index.html");
+  if (!existsSync(source) || existsSync(target)) return;
+  mkdirSync(targetDir, { recursive: true });
+  const canonical = `https://alsahmm.com/${encodeURIComponent(safeAlias)}`;
+  const html = readFileSync(source, "utf8")
+    .replace(/(<link[^>]+rel=["']canonical["'][^>]+href=["'])[^"']+(["'])/i, `$1${canonical}$2`)
+    .replace(/(<meta[^>]+property=["']og:url["'][^>]+content=["'])[^"']+(["'])/i, `$1${canonical}$2`);
+  writeFileSync(target, html, "utf8");
+}
+{
+  const aliasDb = new Database(join(ROOT, "data/sabaik.db"), { readonly: true });
+  const services = aliasDb.prepare("SELECT seo_slug, title, seo_title FROM services WHERE is_active = 1 AND seo_slug != ''").all();
+  for (const service of services) {
+    const aliases = [service.seo_slug, service.title, String(service.seo_title || "").split("|")[0]];
+    if (/فلل.*وقصور/u.test(aliases.join(" "))) {
+      aliases.push(String(service.seo_title || "").split("|")[0].replace(/وقصور/u, "").replace(/\s{2,}/g, " "));
+    }
+    for (const alias of aliases) {
+      addRootAlias(alias, `services/${service.seo_slug}`);
+      const text = String(alias || "").trim();
+      if (text && !/^شركة(?:\s|$)/u.test(text)) {
+        addRootAlias(`شركة ${text}`, `services/${service.seo_slug}`);
+      }
+    }
+  }
+  const posts = aliasDb.prepare("SELECT slug, title FROM posts WHERE status = 'published' AND is_active = 1 AND slug != ''").all();
+  for (const post of posts) {
+    for (const alias of [post.slug, post.title]) addRootAlias(alias, `blog/${post.slug}`);
+  }
+  const pages = aliasDb.prepare("SELECT slug, title FROM seo_pages WHERE status = 'published' AND is_active = 1 AND slug != ''").all();
+  for (const page of pages) {
+    for (const alias of [page.slug, page.title]) addRootAlias(alias, `page/${page.slug}`);
+  }
+  const packages = aliasDb.prepare("SELECT id, seo_slug, name, seo_title FROM containers WHERE is_active = 1 AND seo_slug != ''").all();
+  for (const item of packages) {
+    const packageRouteSlug = LEGACY_PACKAGE_ROUTE_SLUGS[item.id] || item.seo_slug;
+    for (const alias of [item.name, String(item.seo_title || "").split("|")[0]]) {
+      addRootAlias(alias, `cleaning-packages/${packageRouteSlug}`);
+    }
+  }
+  aliasDb.close();
+}
+
 // بعض السجلات القديمة في SQLite تشير إلى /images/<file> بينما الملف المصدر
 // موجود في public/uploads/<file>. أنشئ نسخة توافقية في images/ حتى تعمل
 // المدونة والباقات بعد نقل الموقع إلى Hostinger بنفس مسارات الواجهة الحالية.

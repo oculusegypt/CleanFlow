@@ -6,3 +6,4 @@
 - [SSG heading ownership](ssg-heading-ownership.md) — prerendered pages need one page-owned H1; rich-text H1 tags must be converted as balanced opening/closing pairs.
 - [Blog indexability reset](blog-indexability-reset.md) — successful SPA blog loads must restore both robots and googlebot to indexable state after any prior missing-page state.
 - [Build-time site settings](build-time-site-settings.md) — Hostinger builds must read the configured company name and never overwrite it with a maintenance-script default.
+- [Arabic root URL aliases](arabic-root-url-aliases.md) — root-level Arabic title slugs resolve to the matching service, package, article, or SEO page while prefixed routes remain compatible.

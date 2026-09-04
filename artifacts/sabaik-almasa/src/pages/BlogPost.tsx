@@ -219,10 +219,11 @@ function RelatedPosts({ category, currentSlug }: { category: string; currentSlug
   )
 }
 
-export default function BlogPost() {
+export default function BlogPost({ rootSlug, lookupSlug }: { rootSlug?: string; lookupSlug?: string; params?: unknown } = {}) {
   const [, params1] = useRoute("/blog/:slug")
   const [, params2] = useRoute("/المدونة/:slug")
-  const rawSlug = params1?.slug || params2?.slug || ""
+  const [, rootParams] = useRoute("/:slug")
+  const rawSlug = lookupSlug || params1?.slug || params2?.slug || rootParams?.slug || ""
   const slug = decodeURIComponent(rawSlug)
   const { toast } = useToast()
   const { openModal } = useServiceRequest()
@@ -263,7 +264,9 @@ export default function BlogPost() {
         setLoading(false)
 
         // ── Inject SEO meta tags ──────────────────────────────────────────
-        const canonical = siteUrl(sitePath(d.canonicalUrl || `/blog/${d.slug}`))
+        const canonical = siteUrl(sitePath(rootSlug
+          ? `/${encodeURIComponent(rootSlug)}`
+          : (d.canonicalUrl || `/blog/${d.slug}`)))
         const ogImg     = siteUrl(sitePath(d.ogImage || d.coverImage || "/brand-icon.png"))
         const title     = d.seoTitle || d.title
         const desc      = d.seoDescription || d.excerpt
@@ -368,7 +371,7 @@ export default function BlogPost() {
       const el = document.getElementById("blog-post-schema")
       if (el) el.remove()
     }
-  }, [slug, companyName, phoneCall, phoneWhatsapp, publicUrl, siteSettings, isLoaded])
+  }, [slug, rootSlug, companyName, phoneCall, phoneWhatsapp, publicUrl, siteSettings, isLoaded])
 
   function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {

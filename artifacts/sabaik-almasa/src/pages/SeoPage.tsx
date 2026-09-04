@@ -120,12 +120,13 @@ function PublicCta({
   )
 }
 
-export default function SeoPage() {
+export default function SeoPage({ rootSlug, lookupSlug }: { rootSlug?: string; lookupSlug?: string; params?: unknown } = {}) {
   const [, params1] = useRoute("/page/:slug")
   const [, params2] = useRoute("/pages/:slug")
   const [, params3] = useRoute("/صفحة/:slug")
   const [, params4] = useRoute("/صفحات/:slug")
-  const rawSlug = params1?.slug || params2?.slug || params3?.slug || params4?.slug || ""
+  const [, rootParams] = useRoute("/:slug")
+  const rawSlug = lookupSlug || params1?.slug || params2?.slug || params3?.slug || params4?.slug || rootParams?.slug || ""
   const slug = decodeURIComponent(rawSlug)
   const { openModal } = useServiceRequest()
   const siteSettings = useSiteSettings()
@@ -169,7 +170,9 @@ export default function SeoPage() {
         const description = resolvedData.seoDescription || resolvedData.excerpt
         const indexable = isSeoPageIndexable(resolvedData)
         const canonical = siteUrl(sitePath(
-          indexable ? (resolvedData.canonicalUrl || window.location.pathname) : window.location.pathname,
+          rootSlug
+            ? `/${encodeURIComponent(rootSlug)}`
+            : (indexable ? (resolvedData.canonicalUrl || window.location.pathname) : window.location.pathname),
         ))
         const image = toAbsoluteAsset(resolvedData.ogImage || resolvedData.coverImage)
         const resolvedTitle = replaceLegacyCompanyName(`${title} | ${companyName || "الشركة"}`, companyName)
@@ -239,7 +242,7 @@ export default function SeoPage() {
       removeSeoArtifacts()
       document.getElementById("seo-page-canonical")?.remove()
     }
-  }, [slug, companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded])
+  }, [slug, rootSlug, companyName, phoneCall, phoneWhatsapp, publicUrl, isLoaded])
 
   if (loading) {
     return (

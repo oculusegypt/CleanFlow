@@ -54,10 +54,11 @@ function sanitizePackageText(value: string): string {
     .replace(/\b(?:140°|150 بار|3000 واط)\b/g, "حسب نوع الخدمة")
 }
 
-export default function PackageDetail() {
+export default function PackageDetail({ rootSlug, lookupSlug }: { rootSlug?: string; lookupSlug?: string; params?: unknown } = {}) {
   const [, cleaningPackageParams] = useRoute("/cleaning-packages/:slug")
   const [, containerParams] = useRoute("/container/:slug")
-  const slug = cleaningPackageParams?.slug || containerParams?.slug || ""
+  const [, rootParams] = useRoute("/:slug")
+  const slug = lookupSlug || cleaningPackageParams?.slug || containerParams?.slug || rootParams?.slug || ""
   const { data: apiCleaningPackages } = useGetPackages()
   const [container, setCleaningPackage] = useState<CleaningPackage | null>(null)
   const { openModal } = useServiceRequest()
@@ -74,7 +75,9 @@ export default function PackageDetail() {
   // All legacy and generated aliases resolve to one stable package URL. This
   // keeps the hydrated page aligned with the prerendered canonical.
   const packageSlug = container ? getPackageRouteSlug(container) : slug
-  const packageCanonical = siteUrl(`/cleaning-packages/${encodeURIComponent(packageSlug)}`)
+  const packageCanonical = siteUrl(rootSlug
+    ? `/${encodeURIComponent(rootSlug)}`
+    : `/cleaning-packages/${encodeURIComponent(packageSlug)}`)
   const packageDescription = container?.description
     ? sanitizePackageText(container.description)
     : "تفاصيل باقات تنظيف المنازل والفلل بالرياض حسب نوع العقار ونطاق العمل."
