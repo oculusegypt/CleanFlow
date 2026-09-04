@@ -3,11 +3,14 @@ import { siteUrl } from "@/lib/siteUrl"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
 import { OffersSection } from "@/components/home/OffersSection"
+import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function OffersPage() {
+  const { companyName } = useSiteSettings()
+  const resolvedCompanyName = companyName || "شركة تنظيف بالرياض"
   useDocumentSEO({
-    title: "عروض التنظيف الموسمية بالرياض | السهم كلين",
-    description: "اكتشف عروض السهم كلين الموسمية على خدمات وباقات التنظيف بالرياض واحجز عرضك لفترة محدودة.",
+    title: `عروض التنظيف الموسمية بالرياض | ${resolvedCompanyName}`,
+    description: `اكتشف عروض ${resolvedCompanyName} الموسمية على خدمات وباقات التنظيف بالرياض واحجز عرضك لفترة محدودة.`,
     keywords: "عروض تنظيف بالرياض, خصومات تنظيف, عروض موسمية, باقات تنظيف مخفضة",
     canonical: siteUrl("/offers"),
   })

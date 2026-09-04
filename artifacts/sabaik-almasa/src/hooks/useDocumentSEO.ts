@@ -53,7 +53,7 @@ export function useDocumentSEO({
     const resolvedDescription = replaceCompanyName(description)
     const resolvedKeywords = replaceCompanyName(keywords)
     const resolvedOgImageAlt = replaceCompanyName(ogImageAlt)
-    const brandName = (companyName || "السهم كلين").replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
+    const brandName = (companyName || "شركة تنظيف بالرياض").replace(/^(مؤسسة|شركة)\s+/, "").trim() || "شركة تنظيف بالرياض"
     const resolvedCanonical = canonical
       ? siteUrl(sitePath(canonical, publicUrl), publicUrl)
       : ""

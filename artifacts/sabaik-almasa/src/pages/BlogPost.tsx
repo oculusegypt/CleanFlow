@@ -232,15 +232,26 @@ export default function BlogPost() {
   const [post, setPost]     = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [requestError, setRequestError] = useState(false)
 
   useEffect(() => {
     if (!slug) return
     setLoading(true)
+    setNotFound(false)
+    setRequestError(false)
+    // Do not inherit noindex from a previous missing route while this valid
+    // article is being requested. Only a confirmed 404 may set noindex.
+    setMeta("robots", "index, follow")
+    setMeta("googlebot", "index, follow")
     fetch(`${API_BASE}/api/posts/${encodeURIComponent(slug)}`)
       .then(r => {
         if (!r.ok) {
-          markMissingPage()
-          setNotFound(true)
+          if (r.status === 404) {
+            markMissingPage()
+            setNotFound(true)
+          } else {
+            setRequestError(true)
+          }
           setLoading(false)
           return null
         }
@@ -346,8 +357,9 @@ export default function BlogPost() {
         document.head.appendChild(script)
       })
       .catch(() => {
-        markMissingPage()
-        setNotFound(true)
+        // Network failures and 5xx responses are transient errors, not proof
+        // that the article is missing. Keep the page indexable for crawlers.
+        setRequestError(true)
         setLoading(false)
       })
 
@@ -374,13 +386,13 @@ export default function BlogPost() {
     </div>
   )
 
-  if (notFound || !post) return (
+  if (notFound || requestError || !post) return (
     <div className="min-h-screen flex flex-col" dir="rtl">
       <Navbar />
       <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-4">
         <BookOpen size={56} className="text-gray-300" />
-        <h1 className="text-2xl font-black text-gray-800">المقال غير موجود</h1>
-        <p className="text-gray-500">المقال الذي تبحث عنه غير موجود أو تم حذفه</p>
+        <h1 className="text-2xl font-black text-gray-800">{requestError ? "تعذر تحميل المقال مؤقتًا" : "المقال غير موجود"}</h1>
+        <p className="text-gray-500">{requestError ? "تعذر الاتصال بالخادم الآن، أعد المحاولة بعد لحظات." : "المقال الذي تبحث عنه غير موجود أو تم حذفه"}</p>
         <Link href="/blog">
           <span className="bg-primary text-white px-6 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2">
             <ArrowRight size={16} /> العودة للمدونة

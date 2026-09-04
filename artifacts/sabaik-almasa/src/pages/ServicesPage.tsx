@@ -5,11 +5,14 @@ import { useDocumentSEO } from "@/hooks/useDocumentSEO"
 import { siteUrl } from "@/lib/siteUrl"
 import { Link } from "wouter"
 import { ChevronLeft } from "lucide-react"
+import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function ServicesPage() {
+  const { companyName } = useSiteSettings()
+  const resolvedCompanyName = companyName || "شركة تنظيف بالرياض"
   useDocumentSEO({
-    title: "خدمات التنظيف بالرياض | السهم كلين",
-    description: "استعرض خدمات السهم كلين للتنظيف بالرياض: تنظيف المنازل والفلل والقصور، جلي الرخام، غسيل المكيفات، المجالس بالبخار والخزانات.",
+    title: `خدمات التنظيف بالرياض | ${resolvedCompanyName}`,
+    description: `استعرض خدمات ${resolvedCompanyName} للتنظيف بالرياض: تنظيف المنازل والفلل والقصور، جلي الرخام، غسيل المكيفات، المجالس بالبخار والخزانات.`,
     keywords: "خدمات التنظيف بالرياض, تنظيف منازل, تنظيف فلل, جلي رخام, غسيل مكيفات, تنظيف مجالس",
     canonical: siteUrl("/services"),
   })
@@ -26,7 +29,7 @@ export default function ServicesPage() {
           </div>
           <h1 className="text-3xl md:text-5xl font-black">خدمات التنظيف بالرياض</h1>
           <p className="text-white/75 mt-3 text-lg max-w-3xl leading-relaxed">
-            حلول تنظيف متخصصة للمنازل والفلل والمنشآت، ينفذها فريق السهم كلين بمواعيد واضحة وخدمة موثوقة.
+            حلول تنظيف متخصصة للمنازل والفلل والمنشآت، ينفذها فريق {resolvedCompanyName} بمواعيد واضحة وخدمة موثوقة.
           </p>
         </div>
       </div>

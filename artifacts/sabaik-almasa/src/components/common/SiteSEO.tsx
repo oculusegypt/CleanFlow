@@ -42,8 +42,8 @@ export function SiteSEO() {
   useEffect(() => {
     if (!isLoaded) return
     const isAdmin = location.startsWith("/admin")
-    const legalName = companyName || "مؤسسة السهم كلين"
-    const siteName = legalName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين"
+    const legalName = companyName || "شركة تنظيف بالرياض"
+    const siteName = legalName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "شركة تنظيف بالرياض"
     const defaultTitle = buildHomepageTitle(companyName)
     const defaultDescription = description || "خدمات تنظيف المنازل والفلل والشقق والمكاتب في الرياض، مع تنظيف ما بعد البناء وجلي الرخام وغسيل المكيفات."
     const siteOrigin = getSiteUrl(publicUrl)

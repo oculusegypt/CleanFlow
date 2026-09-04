@@ -43,7 +43,7 @@ const SEO_DEFAULTS = {
 // verified production origin. Never derive them from a build or proxy host.
 const SITE_URL = CANONICAL_SITE_URL;
 const siteCompanyName = settingMap.company_name?.trim() || SEO_DEFAULTS.companyName;
-const siteBrandName = siteCompanyName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || "السهم كلين";
+const siteBrandName = siteCompanyName.replace(/^(مؤسسة|شركة)\s+/, "").trim() || SEO_DEFAULTS.companyName;
 const siteDescription = settingMap.site_desc?.trim() || SEO_DEFAULTS.description;
 const siteLogo = "/brand-icon.png";
 let sitePhones = [];
@@ -720,7 +720,7 @@ function generateFullHomepageStaticContent() {
     <!-- Why Choose Us & Trust Evidence -->
     <section id="why-us" style="margin-bottom:48px;padding:32px 24px;background:#1e3a5f;color:#fff;border-radius:20px">
       <div style="text-align:center;margin-bottom:28px">
-        <h2 style="font-size:26px;font-weight:800;margin:0 0 8px">لماذا تختار مؤسسة السهم كلين بالرياض؟</h2>
+        <h2 style="font-size:26px;font-weight:800;margin:0 0 8px">لماذا تختار ${esc(siteCompanyName)} بالرياض؟</h2>
         <p style="font-size:16px;color:#cbd5e0;margin:0">نوضح نطاق الخدمة وننسق التفاصيل المناسبة لكل موقع قبل التنفيذ</p>
       </div>
       <div style="display:flex;justify-content:center;margin:0 0 24px">
@@ -788,7 +788,7 @@ function generateFullHomepageStaticContent() {
       </div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
-          <h3 style="font-size:16px;font-weight:800;color:#1e3a5f;margin:0 0 6px">ما هي الخدمات التي تقدمها مؤسسة السهم كلين بالرياض؟</h3>
+          <h3 style="font-size:16px;font-weight:800;color:#1e3a5f;margin:0 0 6px">ما هي الخدمات التي تقدمها ${esc(siteCompanyName)} بالرياض؟</h3>
           <p style="font-size:14px;color:#4a5568;margin:0;line-height:1.7">نقدم تنظيف الفلل، القصور، الشقق، المباني بعد التشطيب وإزالة الإسمنت، غسيل المجالس والكنب بالبخار 140°، جلي وتلميع الرخام بالألماس، تنظيف المكيفات سبليت، وتعقيم الخزانات ومكافحة الحشرات.</p>
         </div>
         <div style="padding:18px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">

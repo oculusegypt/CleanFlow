@@ -10,8 +10,8 @@ export default function CallNowPage() {
   const href = `tel:${phone.replace(/[^\d+]/g, "")}`
 
   useDocumentSEO({
-    title: "اتصل الآن | السهم كلين",
-    description: "اتصل الآن بالسهم كلين لحجز خدمة تنظيف في الرياض والتحدث مباشرة مع فريق العمليات.",
+    title: `اتصل الآن | ${companyName || "شركة تنظيف بالرياض"}`,
+    description: `اتصل الآن بـ${companyName || "شركة تنظيف بالرياض"} لحجز خدمة تنظيف في الرياض والتحدث مباشرة مع فريق العمليات.`,
     keywords: "اتصل الآن شركة تنظيف بالرياض, رقم شركة تنظيف بالرياض, حجز تنظيف",
     canonical: siteUrl("/اتصل-الآن"),
   })
@@ -27,7 +27,7 @@ export default function CallNowPage() {
           <Phone size={36} />
         </div>
         <h1 className="text-3xl font-black">جاري تحويلك للاتصال</h1>
-        <p className="mt-4 text-white/75">سيتم فتح تطبيق الهاتف للاتصال بـ {companyName || "السهم كلين"}.</p>
+        <p className="mt-4 text-white/75">سيتم فتح تطبيق الهاتف للاتصال بـ {companyName || "شركة تنظيف بالرياض"}.</p>
         <a href={href} className="mt-8 inline-flex rounded-xl bg-secondary px-8 py-4 font-black text-white">
           اتصل الآن: <span dir="ltr" className="mr-2">{phone}</span>
         </a>

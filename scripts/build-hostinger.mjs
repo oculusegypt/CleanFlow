@@ -699,9 +699,11 @@ step("تنظيف اسم العلامة القديمة من ملفات Hostinger"
   const siteName = String(siteNameRow?.value || "").trim() || "الشركة";
   const legacyPatterns = [
     [/مؤسسة\s+مؤسسة\s+السهم\s+كلين/gu, siteName],
+    [/مؤسسة\s+السهم\s+كلين/gu, siteName],
     [/مؤسسة\s+السهم كلين\s+الماسة/gu, siteName],
     [/شركة\s+السهم كلين\s+الماسة/gu, siteName],
     [/السهم كلين\s+الماسة/gu, siteName],
+    [/السهم\s+كلين/gu, siteName],
     [/منصة\s+باقات التنظيف/gu, siteName],
   ];
   const walk = (dir) => {
